@@ -107,3 +107,26 @@ func (c *Crawler) getSameTitledPostInfos(sameTitleSearchPage string) []PostInfo 
 
 	return infos
 }
+
+func (c *Crawler) ParsePost(info PostInfo) (p Post) {
+	doc, err := c.loader.Load(info.URL)
+	if err != nil {
+		panic(err)
+	}
+
+	push := doc.Find(".push")
+
+	p.Info = info
+	p.NumPush = push.Length()
+	p.NumUp = push.FilterFunction(isPushUp).Length()
+	p.NumDown = push.FilterFunction(isPushDown).Length()
+	return
+}
+
+func isPushUp(i int, sel *goquery.Selection) bool {
+	return strings.TrimSpace(sel.Find(".push-tag").Text()) == "推"
+}
+
+func isPushDown(i int, sel *goquery.Selection) bool {
+	return strings.TrimSpace(sel.Find(".push-tag").Text()) == "噓"
+}

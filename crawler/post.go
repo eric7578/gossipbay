@@ -12,3 +12,10 @@ type PostInfo struct {
 	URL      string
 	Replies  []PostInfo
 }
+
+type Post struct {
+	Info    PostInfo
+	NumPush int
+	NumUp   int
+	NumDown int
+}

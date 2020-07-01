@@ -35,25 +35,27 @@ func (c *Crawler) ParsePostInfos(page string) (infos map[string]PostInfo, prev s
 	prev = btns.Eq(1).AttrOr("href", "")
 	next = btns.Eq(2).AttrOr("href", "")
 
-	urls := doc.
+	var wg sync.WaitGroup
+	infoc := make(chan []PostInfo)
+	doc.
 		Find(".r-list-container").
 		Children().
 		Filter(".search-bar").
 		NextUntil(".r-list-sep").
-		Map(func(i int, sel *goquery.Selection) string {
-			return sel.Find(".dropdown > .item > a").Eq(0).AttrOr("href", "")
+		Each(func(i int, sel *goquery.Selection) {
+			wg.Add(1)
+			go func(sel *goquery.Selection) {
+				defer wg.Done()
+				url := sel.Find(".dropdown > .item > a").Eq(0).AttrOr("href", "")
+				if infos := c.getSameTitledPostInfos(url); len(infos) != 0 {
+					infoc <- infos
+				} else {
+					// in some edge cases, you may not find any same titled posts
+					// which might be caused by the name of the title
+					infoc <- []PostInfo{parsePostInfo(sel)}
+				}
+			}(sel)
 		})
-
-	var wg sync.WaitGroup
-	wg.Add(len(urls))
-	infoc := make(chan []PostInfo)
-
-	for _, url := range urls {
-		go func(url string) {
-			defer wg.Done()
-			infoc <- c.getSameTitledPostInfos(url)
-		}(url)
-	}
 
 	go func() {
 		wg.Wait()
@@ -84,25 +86,7 @@ func (c *Crawler) getSameTitledPostInfos(sameTitleSearchPage string) []PostInfo 
 		Filter(".search-bar").
 		NextUntil(".r-list-sep").
 		Each(func(i int, sel *goquery.Selection) {
-			// EX: https://www.ptt.cc/bbs/Gossiping/M.1592706173.A.56E.html
-			title := sel.Find(".title > a")
-			href, _ := title.Attr("href")
-			_, file := path.Split(href)
-			createAt, err := strconv.ParseInt(strings.Split(file, ".")[1], 10, 54)
-			if err != nil {
-				panic(err)
-			}
-
-			info := PostInfo{
-				ID:       file,
-				Author:   sel.Find(".author").Text(),
-				Title:    title.Text(),
-				CreateAt: time.Unix(createAt, 0),
-				URL:      href,
-				Replies:  make([]PostInfo, 0),
-			}
-
-			infos = append(infos, info)
+			infos = append(infos, parsePostInfo(sel))
 		})
 
 	return infos
@@ -120,7 +104,51 @@ func (c *Crawler) ParsePost(info PostInfo) (p Post) {
 	p.NumPush = push.Length()
 	p.NumUp = push.FilterFunction(isPushUp).Length()
 	p.NumDown = push.FilterFunction(isPushDown).Length()
+	p.Replies = make([]Post, 0)
+
+	if len(info.Replies) > 0 {
+		var wg sync.WaitGroup
+		wg.Add(len(info.Replies))
+		replyc := make(chan Post)
+
+		for _, info := range info.Replies {
+			go func(info PostInfo) {
+				defer wg.Done()
+				replyc <- c.ParsePost(info)
+			}(info)
+		}
+
+		go func() {
+			wg.Wait()
+			close(replyc)
+		}()
+
+		for reply := range replyc {
+			p.Replies = append(p.Replies, reply)
+		}
+	}
+
 	return
+}
+
+func parsePostInfo(sel *goquery.Selection) PostInfo {
+	// EX: https://www.ptt.cc/bbs/Gossiping/M.1592706173.A.56E.html
+	title := sel.Find(".title > a")
+	href, _ := title.Attr("href")
+	_, file := path.Split(href)
+	createAt, err := strconv.ParseInt(strings.Split(file, ".")[1], 10, 54)
+	if err != nil {
+		panic(err)
+	}
+
+	return PostInfo{
+		ID:       file,
+		Author:   sel.Find(".author").Text(),
+		Title:    title.Text(),
+		CreateAt: time.Unix(createAt, 0),
+		URL:      href,
+		Replies:  make([]PostInfo, 0),
+	}
 }
 
 func isPushUp(i int, sel *goquery.Selection) bool {

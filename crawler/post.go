@@ -15,6 +15,7 @@ type PostInfo struct {
 
 type Post struct {
 	Info    PostInfo
+	Replies []Post
 	NumPush int
 	NumUp   int
 	NumDown int

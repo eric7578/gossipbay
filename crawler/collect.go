@@ -1,16 +1,14 @@
 package crawler
 
 import (
-	"errors"
-	"sort"
 	"sync"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
 )
 
-func (c *Crawler) CollectUntil(page string, until time.Time) <-chan PostInfo {
-	infoc := make(chan PostInfo)
+func (c *Crawler) CollectUntil(page string, until time.Time) <-chan map[string]PostInfo {
+	infoc := make(chan map[string]PostInfo)
 	go func() {
 		defer close(infoc)
 		for {
@@ -25,17 +23,37 @@ func (c *Crawler) CollectUntil(page string, until time.Time) <-chan PostInfo {
 	return infoc
 }
 
-func (c *Crawler) parseBoardPage(infoc chan PostInfo, page string, until time.Time) (prev string, cont bool) {
+func (c *Crawler) parseBoardPage(infoc chan map[string]PostInfo, page string, until time.Time) (prev string, cont bool) {
 	doc, err := c.loader.Load(page)
 	if err != nil {
 		panic(err)
 	}
 
-	// nav btns
-	btns := doc.Find(".btn-group-paging .btn")
-	prev = btns.Eq(1).AttrOr("href", "")
+	prev = doc.Find(".btn-group-paging .btn").Eq(1).AttrOr("href", "")
+	infos, cont := parsePostInfos(doc, until)
 
 	var wg sync.WaitGroup
+	for _, info := range infos {
+		wg.Add(1)
+		go func(url string) {
+			defer wg.Done()
+
+			doc, err := c.loader.Load(url)
+			if err != nil {
+				panic(err)
+			}
+
+			infos, _ := parsePostInfos(doc, until)
+			infoc <- infos
+		}(info.SameTitleURL)
+	}
+	wg.Wait()
+
+	return
+}
+
+func parsePostInfos(doc *goquery.Document, until time.Time) (infos map[string]PostInfo, cont bool) {
+	infos = make(map[string]PostInfo)
 	cont = true
 	doc.
 		Find(".r-list-container").
@@ -43,85 +61,27 @@ func (c *Crawler) parseBoardPage(infoc chan PostInfo, page string, until time.Ti
 		Filter(".search-bar").
 		NextUntil(".r-list-sep").
 		EachWithBreak(func(i int, sel *goquery.Selection) bool {
-			rowInfo, err := parsePostInfo(sel)
-			if errors.Is(err, errEmptyTitle) {
+			title := sel.Find(".title > a")
+			href, ok := title.Attr("href")
+			if !ok {
 				return true
 			}
 
-			if rowInfo.CreateAt.After(until) {
+			id, createAt := parseURL(href)
+			if createAt.Before(until) {
 				cont = false
 				return false
 			}
 
-			if url, ok := sel.Find(".dropdown > .item > a").Eq(0).Attr("href"); ok {
-				wg.Add(1)
-				go func() {
-					defer wg.Done()
-					info, ok := c.getSameTitledPostInfos(url)
-					if !ok {
-						// in some edge cases, you may not find any same titled posts
-						// which might be caused by the name of the title
-						info, _ = parsePostInfo(sel)
-					}
-					infoc <- info
-				}()
+			infos[id] = PostInfo{
+				URL:          href,
+				SameTitleURL: sel.Find(".dropdown > .item > a").Eq(0).AttrOr("href", ""),
+				CreateAt:     createAt,
+				Relates:      make([]PostInfo, 0),
 			}
 			return true
 		})
 
-	wg.Wait()
-
-	return
-}
-
-func (c *Crawler) getSameTitledPostInfos(sameTitleSearchPage string) (info PostInfo, ok bool) {
-	doc, err := c.loader.Load(sameTitleSearchPage)
-	if err != nil {
-		panic(err)
-	}
-
-	infos := make([]PostInfo, 0)
-	doc.
-		Find(".r-list-container").
-		Children().
-		Filter(".search-bar").
-		NextUntil(".r-list-sep").
-		Each(func(i int, sel *goquery.Selection) {
-			if info, err := parsePostInfo(sel); err == nil {
-				infos = append(infos, info)
-			}
-		})
-
-	numInfos := len(infos)
-	switch numInfos {
-	case 0:
-		ok = false
-	case 1:
-		ok = true
-		info = infos[0]
-	default:
-		ok = true
-		sort.Sort(AscCreateDate(infos))
-		info = infos[0]
-		info.Relates = infos[1:]
-	}
-	return
-}
-
-func parsePostInfo(sel *goquery.Selection) (info PostInfo, err error) {
-	title := sel.Find(".title > a")
-	href, ok := title.Attr("href")
-	if !ok {
-		err = errEmptyTitle
-		return
-	}
-
-	_, createAt := parseURL(href)
-	info = PostInfo{
-		CreateAt: createAt,
-		URL:      href,
-		Relates:  make([]PostInfo, 0),
-	}
 	return
 }
 

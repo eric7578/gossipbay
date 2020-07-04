@@ -1,11 +1,8 @@
 package crawler
 
 import (
-	"path"
-	"strconv"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -24,26 +21,34 @@ func NewCrawler(ldr DocumentLoader) *Crawler {
 	}
 }
 
-func (c *Crawler) ParsePost(info PostInfo) (p Post) {
+func (c *Crawler) ParsePost(info PostInfo) Post {
 	doc, err := c.loader.Load(info.URL)
 	if err != nil {
 		panic(err)
 	}
 
+	id, createAt := parseURL(info.URL)
 	push := doc.Find(".push")
+	metaTags := doc.Find(".article-meta-tag")
 
-	p.Info = info
-	p.NumPush = push.Length()
-	p.NumUp = push.FilterFunction(isPushUp).Length()
-	p.NumDown = push.FilterFunction(isPushDown).Length()
-	p.Replies = make([]Post, 0)
+	p := Post{
+		ID:       id,
+		URL:      info.URL,
+		CreateAt: createAt,
+		Title:    metaTags.FilterFunction(isTitleMetaTag).Next().Text(),
+		Author:   metaTags.FilterFunction(isAuthorMetaTag).Next().Text(),
+		Replies:  make([]Post, 0),
+		NumPush:  push.Length(),
+		NumUp:    push.FilterFunction(isPushUp).Length(),
+		NumDown:  push.FilterFunction(isPushDown).Length(),
+	}
 
-	if len(info.Replies) > 0 {
+	if len(info.Relates) > 0 {
 		var wg sync.WaitGroup
-		wg.Add(len(info.Replies))
+		wg.Add(len(info.Relates))
 		replyc := make(chan Post)
 
-		for _, info := range info.Replies {
+		for _, info := range info.Relates {
 			go func(info PostInfo) {
 				defer wg.Done()
 				replyc <- c.ParsePost(info)
@@ -60,27 +65,15 @@ func (c *Crawler) ParsePost(info PostInfo) (p Post) {
 		}
 	}
 
-	return
+	return p
 }
 
-func parsePostInfo(sel *goquery.Selection) PostInfo {
-	// EX: https://www.ptt.cc/bbs/Gossiping/M.1592706173.A.56E.html
-	title := sel.Find(".title > a")
-	href, _ := title.Attr("href")
-	_, file := path.Split(href)
-	createAt, err := strconv.ParseInt(strings.Split(file, ".")[1], 10, 54)
-	if err != nil {
-		panic(err)
-	}
+func isTitleMetaTag(i int, sel *goquery.Selection) bool {
+	return strings.TrimSpace(sel.Text()) == "標題"
+}
 
-	return PostInfo{
-		ID:       file,
-		Author:   sel.Find(".author").Text(),
-		Title:    title.Text(),
-		CreateAt: time.Unix(createAt, 0),
-		URL:      href,
-		Replies:  make([]PostInfo, 0),
-	}
+func isAuthorMetaTag(i int, sel *goquery.Selection) bool {
+	return strings.TrimSpace(sel.Text()) == "作者"
 }
 
 func isPushUp(i int, sel *goquery.Selection) bool {

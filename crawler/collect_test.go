@@ -15,7 +15,7 @@ func TestCrawler_getSameTitledPostInfos(t *testing.T) {
 
 	assert.Equal(t, "/bbs/Gossiping/M.1593826452.A.02F.html", info.URL)
 
-	assert.Equal(t, 2, len(info.Replies))
-	assert.Equal(t, "/bbs/Gossiping/M.1593827377.A.6C2.html", info.Replies[0].URL)
-	assert.Equal(t, "/bbs/Gossiping/M.1593827873.A.2F9.html", info.Replies[1].URL)
+	assert.Equal(t, 2, len(info.Relates))
+	assert.Equal(t, "/bbs/Gossiping/M.1593827377.A.6C2.html", info.Relates[0].URL)
+	assert.Equal(t, "/bbs/Gossiping/M.1593827873.A.2F9.html", info.Relates[1].URL)
 }

@@ -8,7 +8,23 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-func (c *Crawler) parseBoardPage(infoc chan PostInfo, page string, until time.Time) (prev string, next bool) {
+func (c *Crawler) CollectUntil(page string, until time.Time) <-chan PostInfo {
+	infoc := make(chan PostInfo)
+	go func() {
+		defer close(infoc)
+		for {
+			prev, cont := c.parseBoardPage(infoc, page, until)
+			if cont {
+				page = prev
+			} else {
+				return
+			}
+		}
+	}()
+	return infoc
+}
+
+func (c *Crawler) parseBoardPage(infoc chan PostInfo, page string, until time.Time) (prev string, cont bool) {
 	doc, err := c.loader.Load(page)
 	if err != nil {
 		panic(err)
@@ -19,6 +35,7 @@ func (c *Crawler) parseBoardPage(infoc chan PostInfo, page string, until time.Ti
 	prev = btns.Eq(1).AttrOr("href", "")
 
 	var wg sync.WaitGroup
+	cont = true
 	doc.
 		Find(".r-list-container").
 		Children().
@@ -26,10 +43,11 @@ func (c *Crawler) parseBoardPage(infoc chan PostInfo, page string, until time.Ti
 		NextUntil(".r-list-sep").
 		EachWithBreak(func(i int, sel *goquery.Selection) bool {
 			rowInfo := parsePostInfo(sel)
-			if rowInfo.CreateAt.Before(until) {
-				next = false
+			if rowInfo.CreateAt.After(until) {
+				cont = false
 				return false
 			}
+
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
@@ -77,9 +95,21 @@ func (c *Crawler) getSameTitledPostInfos(sameTitleSearchPage string) (info PostI
 		ok = true
 		sort.Sort(AscCreateDate(infos))
 		info = infos[0]
-		info.Replies = infos[1:]
+		info.Relates = infos[1:]
 	}
 	return
+}
+
+func parsePostInfo(sel *goquery.Selection) PostInfo {
+	title := sel.Find(".title > a")
+	href, _ := title.Attr("href")
+	_, createAt := parseURL(href)
+
+	return PostInfo{
+		CreateAt: createAt,
+		URL:      href,
+		Relates:  make([]PostInfo, 0),
+	}
 }
 
 type AscCreateDate []PostInfo

@@ -1,6 +1,7 @@
 package crawler
 
 import (
+	"errors"
 	"sort"
 	"sync"
 	"time"
@@ -42,24 +43,29 @@ func (c *Crawler) parseBoardPage(infoc chan PostInfo, page string, until time.Ti
 		Filter(".search-bar").
 		NextUntil(".r-list-sep").
 		EachWithBreak(func(i int, sel *goquery.Selection) bool {
-			rowInfo := parsePostInfo(sel)
+			rowInfo, err := parsePostInfo(sel)
+			if errors.Is(err, errEmptyTitle) {
+				return true
+			}
+
 			if rowInfo.CreateAt.After(until) {
 				cont = false
 				return false
 			}
 
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				url := sel.Find(".dropdown > .item > a").Eq(0).AttrOr("href", "")
-				if info, ok := c.getSameTitledPostInfos(url); ok {
+			if url, ok := sel.Find(".dropdown > .item > a").Eq(0).Attr("href"); ok {
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					info, ok := c.getSameTitledPostInfos(url)
+					if !ok {
+						// in some edge cases, you may not find any same titled posts
+						// which might be caused by the name of the title
+						info, _ = parsePostInfo(sel)
+					}
 					infoc <- info
-				} else {
-					// in some edge cases, you may not find any same titled posts
-					// which might be caused by the name of the title
-					infoc <- parsePostInfo(sel)
-				}
-			}()
+				}()
+			}
 			return true
 		})
 
@@ -81,7 +87,9 @@ func (c *Crawler) getSameTitledPostInfos(sameTitleSearchPage string) (info PostI
 		Filter(".search-bar").
 		NextUntil(".r-list-sep").
 		Each(func(i int, sel *goquery.Selection) {
-			infos = append(infos, parsePostInfo(sel))
+			if info, err := parsePostInfo(sel); err == nil {
+				infos = append(infos, info)
+			}
 		})
 
 	numInfos := len(infos)
@@ -100,16 +108,21 @@ func (c *Crawler) getSameTitledPostInfos(sameTitleSearchPage string) (info PostI
 	return
 }
 
-func parsePostInfo(sel *goquery.Selection) PostInfo {
+func parsePostInfo(sel *goquery.Selection) (info PostInfo, err error) {
 	title := sel.Find(".title > a")
-	href, _ := title.Attr("href")
-	_, createAt := parseURL(href)
+	href, ok := title.Attr("href")
+	if !ok {
+		err = errEmptyTitle
+		return
+	}
 
-	return PostInfo{
+	_, createAt := parseURL(href)
+	info = PostInfo{
 		CreateAt: createAt,
 		URL:      href,
 		Relates:  make([]PostInfo, 0),
 	}
+	return
 }
 
 type AscCreateDate []PostInfo

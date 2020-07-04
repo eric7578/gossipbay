@@ -15,9 +15,9 @@ type Crawler struct {
 	loader DocumentLoader
 }
 
-func NewCrawler(ldr DocumentLoader) *Crawler {
+func NewCrawler() *Crawler {
 	return &Crawler{
-		loader: ldr,
+		loader: &HttpLoader{},
 	}
 }
 

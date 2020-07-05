@@ -15,9 +15,11 @@ type Crawler struct {
 	loader DocumentLoader
 }
 
-func NewCrawler() *Crawler {
+func NewCrawler(numWorkers int) *Crawler {
 	return &Crawler{
-		loader: &HttpLoader{},
+		loader: &HttpLoader{
+			sem: make(chan struct{}, numWorkers),
+		},
 	}
 }
 

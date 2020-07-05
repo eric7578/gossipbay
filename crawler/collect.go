@@ -60,17 +60,17 @@ func parsePostInfos(doc *goquery.Document, until time.Time) (infos map[string]Po
 		Children().
 		Filter(".search-bar").
 		NextUntil(".r-list-sep").
-		EachWithBreak(func(i int, sel *goquery.Selection) bool {
+		Each(func(i int, sel *goquery.Selection) {
 			title := sel.Find(".title > a")
 			href, ok := title.Attr("href")
 			if !ok {
-				return true
+				return
 			}
 
 			id, createAt := parseURL(href)
 			if createAt.Before(until) {
 				cont = false
-				return false
+				return
 			}
 
 			infos[id] = PostInfo{
@@ -79,7 +79,6 @@ func parsePostInfos(doc *goquery.Document, until time.Time) (infos map[string]Po
 				CreateAt:     createAt,
 				Relates:      make([]PostInfo, 0),
 			}
-			return true
 		})
 
 	return

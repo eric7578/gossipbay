@@ -18,10 +18,9 @@ func parseURL(href string) (id string, createAt time.Time) {
 }
 
 type PostInfo struct {
-	URL          string
-	SameTitleURL string
-	CreateAt     time.Time
-	Relates      []PostInfo
+	URL      string
+	CreateAt time.Time
+	IsReply  bool
 }
 
 type Post struct {
@@ -30,7 +29,6 @@ type Post struct {
 	CreateAt time.Time
 	Title    string
 	Author   string
-	Replies  []Post
 	NumPush  int
 	NumUp    int
 	NumDown  int

@@ -26,7 +26,7 @@ func TestCrawler_parsePost(t *testing.T) {
 	c := Crawler{
 		loader: &testutil.TestDataLoader{},
 	}
-	p := c.parsePost(PostInfo{URL: "testdata/M.1593841729.A.BDA.html"})
+	p := c.parsePost(postInfo{URL: "testdata/M.1593841729.A.BDA.html"})
 
 	assert.Equal(t, "[閒聊] 聊聊大王", p.Title)
 	assert.Equal(t, "sky419012 (fly)", p.Author)

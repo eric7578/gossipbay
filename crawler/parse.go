@@ -16,7 +16,7 @@ func (c *Crawler) parseBoardPage(page string, until time.Time) ([]Post, string, 
 	var wg sync.WaitGroup
 	wg.Add(len(infos))
 	for _, info := range infos {
-		go func(info PostInfo) {
+		go func(info postInfo) {
 			defer wg.Done()
 			postc <- c.parsePost(info)
 		}(info)
@@ -34,14 +34,14 @@ func (c *Crawler) parseBoardPage(page string, until time.Time) ([]Post, string, 
 	return posts, prev, cont
 }
 
-func (c *Crawler) parsePostInfos(page string, until time.Time) (map[string]PostInfo, string, bool) {
+func (c *Crawler) parsePostInfos(page string, until time.Time) (map[string]postInfo, string, bool) {
 	doc, err := c.loader.Load(page)
 	if err != nil {
 		panic(err)
 	}
 
 	prev := doc.Find(".btn-group-paging .btn").Eq(1).AttrOr("href", "")
-	infos := make(map[string]PostInfo)
+	infos := make(map[string]postInfo)
 	cont := true
 	doc.
 		Find(".r-list-container").
@@ -61,7 +61,7 @@ func (c *Crawler) parsePostInfos(page string, until time.Time) (map[string]PostI
 				return
 			}
 
-			infos[id] = PostInfo{
+			infos[id] = postInfo{
 				URL:      href,
 				CreateAt: createAt,
 			}
@@ -70,7 +70,7 @@ func (c *Crawler) parsePostInfos(page string, until time.Time) (map[string]PostI
 	return infos, prev, cont
 }
 
-func (c *Crawler) parsePost(info PostInfo) Post {
+func (c *Crawler) parsePost(info postInfo) Post {
 	doc, err := c.loader.Load(info.URL)
 	if err != nil {
 		panic(err)

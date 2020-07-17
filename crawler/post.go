@@ -17,7 +17,7 @@ func parseURL(href string) (id string, createAt time.Time) {
 	return
 }
 
-type PostInfo struct {
+type postInfo struct {
 	URL      string
 	CreateAt time.Time
 	IsReply  bool

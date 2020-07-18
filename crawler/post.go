@@ -33,3 +33,11 @@ type Post struct {
 	NumUp    int
 	NumDown  int
 }
+
+type Thread struct {
+	Title   string
+	NumPush int
+	NumUp   int
+	NumDown int
+	Posts   []Post
+}

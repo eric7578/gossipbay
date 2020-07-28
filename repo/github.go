@@ -14,18 +14,19 @@ type Github struct {
 	owner string
 }
 
-func NewGithub(owner, repo string) *Github {
+func NewGithub(owner, repo, token string) *Github {
 	return &Github{
+		token: token,
 		owner: owner,
 		repo:  repo,
 	}
 }
 
-func (gh *Github) ListIssues() []Issue {
+func (gh *Github) ListIssues(labels ...string) []Issue {
 	type GithubIssue struct {
 		Number      int
 		Title       string
-		Labels      []Label
+		Labels      []struct{ Name string }
 		PullRequest json.RawMessage `json:"pull_request,omitempty"`
 	}
 	githubIssues := make([]GithubIssue, 0)
@@ -37,10 +38,14 @@ func (gh *Github) ListIssues() []Issue {
 	issues := make([]Issue, 0)
 	for _, githubIssue := range githubIssues {
 		if len(githubIssue.PullRequest) == 0 {
+			labels := make(map[string]struct{})
+			for _, label := range githubIssue.Labels {
+				labels[label.Name] = struct{}{}
+			}
 			issues = append(issues, Issue{
 				ID:     githubIssue.Number,
 				Title:  githubIssue.Title,
-				Labels: githubIssue.Labels,
+				Labels: labels,
 			})
 		}
 	}
@@ -49,7 +54,7 @@ func (gh *Github) ListIssues() []Issue {
 
 func (gh *Github) CreateIssueComment(issueID int, content string) {
 	type CreateIssueCommentBody struct {
-		Body string
+		Body string `json:"body"`
 	}
 	payload := CreateIssueCommentBody{
 		Body: content,
@@ -79,7 +84,7 @@ func (gh *Github) api(method string, path string, response interface{}, body int
 	}
 
 	if bodyReader != nil {
-		req.Header.Add("Content-Type", "application/json")
+		req.Header.Add("Accept", "application/vnd.github.v3+json")
 	}
 
 	if gh.token != "" {
@@ -91,7 +96,7 @@ func (gh *Github) api(method string, path string, response interface{}, body int
 		panic(err)
 	}
 
-	if res.StatusCode != 200 {
+	if res.StatusCode < 200 || res.StatusCode > 299 {
 		return fmt.Errorf("request to %s got status code error: [%d] %s", url, res.StatusCode, res.Status)
 	}
 

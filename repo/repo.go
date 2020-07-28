@@ -1,16 +1,18 @@
 package repo
 
-type Label struct {
-	Name string
-}
+const (
+	// period labels
+	TrendingWeekly = "trending-weekly"
+	TrendingDaily  = "trending-daily"
+)
 
 type Issue struct {
 	ID     int
 	Title  string
-	Labels []Label
+	Labels map[string]struct{}
 }
 
 type Repository interface {
-	ListIssues() []Issue
+	ListIssues(...string) []Issue
 	CreateIssueComment(issueID int, content string)
 }

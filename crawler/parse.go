@@ -62,12 +62,12 @@ func (c *Crawler) parsePostInfos(page string, until time.Time) (map[string]postI
 			}
 
 			infos[id] = postInfo{
-				URL:      href,
+				URL:      c.resolver.getFullURL(href),
 				CreateAt: createAt,
 			}
 		})
 
-	return infos, prev, cont
+	return infos, c.resolver.getFullURL(prev), cont
 }
 
 func (c *Crawler) parsePost(info postInfo) Post {

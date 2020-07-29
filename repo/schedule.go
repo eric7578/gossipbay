@@ -54,8 +54,8 @@ func RunSchedule(r Repository, opt ScheduleOption) {
 		go func(issue Issue) {
 			defer wg.Done()
 			tr := crawler.NewTrending()
-			c := crawler.NewCrawler(issue.Title)
-			c.CollectUntil(tr, until)
+			c := crawler.NewCrawler()
+			c.CollectUntil(issue.Title, tr, until)
 			r.CreateIssueComment(issue.ID, generateComment(tr.Deviate(opt.Deviate)))
 		}(issue)
 	}

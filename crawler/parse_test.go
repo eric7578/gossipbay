@@ -10,9 +10,8 @@ import (
 
 func TestCrawler_parseBoardPage(t *testing.T) {
 	loc, _ := time.LoadLocation("Asia/Taipei")
-	c := Crawler{
-		loader: &testutil.TestDataLoader{},
-	}
+	c := NewCrawler()
+	c.loader = &testutil.TestDataLoader{}
 	posts, _, ok := c.parsePostInfos("testdata/board.html", time.Date(2020, 7, 3, 0, 0, 0, 0, loc))
 
 	assert.True(t, ok)
@@ -23,9 +22,8 @@ func TestCrawler_parseBoardPage(t *testing.T) {
 }
 
 func TestCrawler_parsePost(t *testing.T) {
-	c := Crawler{
-		loader: &testutil.TestDataLoader{},
-	}
+	c := NewCrawler()
+	c.loader = &testutil.TestDataLoader{}
 	p := c.parsePost(postInfo{URL: "testdata/M.1593841729.A.BDA.html"})
 
 	assert.Equal(t, "[閒聊] 聊聊大王", p.Title)

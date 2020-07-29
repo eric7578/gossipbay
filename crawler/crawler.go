@@ -11,22 +11,24 @@ type DocumentLoader interface {
 }
 
 type Crawler struct {
-	board  string
-	loader DocumentLoader
+	resolver *resolver
+	loader   DocumentLoader
 }
 
-func NewCrawler(board string) *Crawler {
+func NewCrawler() *Crawler {
 	return &Crawler{
-		board:  board,
+		resolver: &resolver{
+			domain: "https://www.ptt.cc",
+		},
 		loader: &HttpLoader{},
 	}
 }
 
-func (c *Crawler) CollectUntil(t *Trending, until time.Time) {
+func (c *Crawler) CollectUntil(board string, t *Trending, until time.Time) {
 	var (
 		posts []Post
 		next  = true
-		page  = "/bbs/" + c.board + "/index.html"
+		page  = c.resolver.getBoardIndex(board)
 	)
 	for next {
 		posts, page, next = c.parseBoardPage(page, until)

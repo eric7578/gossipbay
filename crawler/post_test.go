@@ -8,7 +8,7 @@ import (
 )
 
 func Test_parseURL(t *testing.T) {
-	href := "/bbs/Gossiping/M.1592706173.A.56E.html"
+	href := "https://ptt.cc/bbs/Gossiping/M.1592706173.A.56E.html"
 	id, createAt := parseURL(href)
 
 	assert.Equal(t, "M.1592706173.A.56E.html", id)

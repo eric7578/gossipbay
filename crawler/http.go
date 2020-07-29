@@ -10,15 +10,15 @@ import (
 type HttpLoader struct {
 }
 
-func (ldr *HttpLoader) Load(p string) (doc *goquery.Document, err error) {
+func (ldr *HttpLoader) Load(url string) (doc *goquery.Document, err error) {
 	c := http.Client{}
-	req, err := http.NewRequest("GET", "https://www.ptt.cc"+p, nil)
+	req, err := http.NewRequest("GET", url, nil)
 	req.Header.Add("cookie", "over18=1")
 
 	res, err := c.Do(req)
 	if err == nil {
 		if res.StatusCode != 200 {
-			err = fmt.Errorf("page: %s got status code error: [%d] %s", p, res.StatusCode, res.Status)
+			err = fmt.Errorf("page: %s got status code error: [%d] %s", url, res.StatusCode, res.Status)
 		} else {
 			defer res.Body.Close()
 			doc, err = goquery.NewDocumentFromReader(res.Body)

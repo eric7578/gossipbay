@@ -8,7 +8,7 @@ import (
 )
 
 func parseURL(href string) (id string, createAt time.Time) {
-	timestamp, err := strconv.ParseInt(strings.Split(href, ".")[1], 10, 54)
+	timestamp, err := strconv.ParseInt(strings.Split(path.Base(href), ".")[1], 10, 54)
 	if err != nil {
 		panic(err)
 	}

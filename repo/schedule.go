@@ -10,7 +10,10 @@ import (
 	"github.com/eric7578/gossipbay/crawler"
 )
 
-var commentTmpl *template.Template
+var (
+	commentTmpl *template.Template
+	taipei      *time.Location
+)
 
 func init() {
 	comment := `{{ range . }}
@@ -20,6 +23,11 @@ func init() {
 `
 	var err error
 	commentTmpl, err = template.New("comment").Parse(comment)
+	if err != nil {
+		panic(err)
+	}
+
+	taipei, err = time.LoadLocation("Asia/Taipei")
 	if err != nil {
 		panic(err)
 	}
@@ -37,12 +45,16 @@ type ScheduleOption struct {
 }
 
 func RunSchedule(r Repository, opt ScheduleOption) {
-	var until time.Time
+	now := time.Now()
+	var (
+		from time.Time
+		to   time.Time = time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, taipei)
+	)
 	switch opt.Period {
 	case TrendingWeekly:
-		until = time.Now().Add(-7 * 24 * time.Hour)
+		from = to.Add(-7 * 24 * time.Hour)
 	case TrendingDaily:
-		until = time.Now().Add(-24 * time.Hour)
+		from = to.Add(-24 * time.Hour)
 	default:
 		panic(fmt.Errorf("invalid period %s", opt.Period))
 	}
@@ -55,7 +67,11 @@ func RunSchedule(r Repository, opt ScheduleOption) {
 			defer wg.Done()
 			tr := crawler.NewTrending()
 			c := crawler.NewCrawler()
-			c.CollectUntil(issue.Title, tr, until)
+			c.Collect(tr, crawler.CollectOption{
+				Board: issue.Title,
+				From:  from,
+				To:    to,
+			})
 			r.CreateIssueComment(issue.ID, generateComment(tr.Deviate(opt.Deviate)))
 		}(issue)
 	}

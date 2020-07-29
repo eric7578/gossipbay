@@ -9,15 +9,16 @@ import (
 )
 
 func TestCrawler_parseBoardPage(t *testing.T) {
+	now := time.Now()
 	loc, _ := time.LoadLocation("Asia/Taipei")
 	c := NewCrawler()
 	c.loader = &testutil.TestDataLoader{}
-	posts, _, ok := c.parsePostInfos("testdata/board.html", time.Date(2020, 7, 3, 0, 0, 0, 0, loc))
+	posts, _, ok := c.parsePostInfos("testdata/board.html", time.Date(2020, 7, 3, 0, 0, 0, 0, loc), now)
 
 	assert.True(t, ok)
 	assert.Equal(t, 19, len(posts))
 
-	_, _, ok = c.parsePostInfos("testdata/board.html", time.Date(2020, 7, 5, 0, 0, 0, 0, loc))
+	_, _, ok = c.parsePostInfos("testdata/board.html", time.Date(2020, 7, 5, 0, 0, 0, 0, loc), now)
 	assert.False(t, ok)
 }
 

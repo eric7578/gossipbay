@@ -8,8 +8,8 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-func (c *Crawler) parseBoardPage(page string, until time.Time) ([]Post, string, bool) {
-	infos, prev, cont := c.parsePostInfos(page, until)
+func (c *Crawler) parseBoardPage(page string, from time.Time, to time.Time) ([]Post, string, bool) {
+	infos, prev, cont := c.parsePostInfos(page, from, to)
 	postc := make(chan Post)
 	posts := make([]Post, 0)
 
@@ -34,7 +34,7 @@ func (c *Crawler) parseBoardPage(page string, until time.Time) ([]Post, string, 
 	return posts, prev, cont
 }
 
-func (c *Crawler) parsePostInfos(page string, until time.Time) (map[string]postInfo, string, bool) {
+func (c *Crawler) parsePostInfos(page string, from time.Time, to time.Time) (map[string]postInfo, string, bool) {
 	doc, err := c.loader.Load(page)
 	if err != nil {
 		panic(err)
@@ -56,14 +56,14 @@ func (c *Crawler) parsePostInfos(page string, until time.Time) (map[string]postI
 			}
 
 			id, createAt := parseURL(href)
-			if createAt.Before(until) {
+			if createAt.Before(from) {
 				cont = false
 				return
-			}
-
-			infos[id] = postInfo{
-				URL:      c.resolver.getFullURL(href),
-				CreateAt: createAt,
+			} else if createAt.Before(to) {
+				infos[id] = postInfo{
+					URL:      c.resolver.getFullURL(href),
+					CreateAt: createAt,
+				}
 			}
 		})
 

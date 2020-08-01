@@ -1,9 +1,9 @@
 package crawler
 
 import (
+	"fmt"
+	"sync"
 	"time"
-
-	"github.com/PuerkitoBio/goquery"
 )
 
 type CollectOption struct {
@@ -12,35 +12,50 @@ type CollectOption struct {
 	To    time.Time
 }
 
-type DocumentLoader interface {
-	Load(string) (*goquery.Document, error)
-}
-
 type Crawler struct {
-	resolver *resolver
-	loader   DocumentLoader
+	parser Parser
 }
 
 func NewCrawler() *Crawler {
 	return &Crawler{
-		resolver: &resolver{
-			domain: "https://www.ptt.cc",
+		parser: &pageParser{
+			ldr:    &httpLoader{},
+			domain: "https://ptt.cc/bbs",
 		},
-		loader: &HttpLoader{},
 	}
 }
 
-func (c *Crawler) Collect(t *Trending, opt CollectOption) {
-	if opt.To.IsZero() {
-		opt.To = time.Now()
-	}
+func (c *Crawler) Collect(opt CollectOption) []Post {
 	var (
 		posts []Post
-		next  = true
-		page  = c.resolver.getBoardIndex(opt.Board)
+		page  = fmt.Sprintf("/bbs/%s/index.html", opt.Board)
+		postc = make(chan Post)
+		wg    sync.WaitGroup
 	)
-	for next {
-		posts, page, next = c.parseBoardPage(page, opt.From, opt.To)
-		t.addPosts(posts...)
+	for {
+		infos, next, more := c.parser.ParsePostList(page, opt.From, opt.To)
+		wg.Add(len(infos))
+		for _, info := range infos {
+			go func(info PostInfo) {
+				defer wg.Done()
+				postc <- c.parser.ParsePost(info.URL)
+			}(info)
+		}
+		if more {
+			page = next
+		} else {
+			break
+		}
 	}
+
+	go func() {
+		wg.Wait()
+		close(postc)
+	}()
+
+	for post := range postc {
+		posts = append(posts, post)
+	}
+
+	return posts
 }

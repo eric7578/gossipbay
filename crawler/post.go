@@ -1,35 +1,25 @@
 package crawler
 
 import (
-	"path"
-	"strconv"
-	"strings"
 	"time"
 )
 
-func parseURL(href string) (id string, createAt time.Time) {
-	timestamp, err := strconv.ParseInt(strings.Split(path.Base(href), ".")[1], 10, 54)
-	if err != nil {
-		panic(err)
-	}
-	_, id = path.Split(href)
-	createAt = time.Unix(timestamp, 0)
-	return
-}
-
-type postInfo struct {
+type PostInfo struct {
 	URL      string
 	CreateAt time.Time
 	IsReply  bool
 }
 
 type Post struct {
-	ID       string
-	URL      string
-	CreateAt time.Time
-	Title    string
-	Author   string
-	NumPush  int
-	NumUp    int
-	NumDown  int
+	ID              string
+	URL             string
+	CreateAt        time.Time
+	Title           string
+	Author          string
+	NumPush         int
+	NumUp           int
+	NumDown         int
+	NumNoRepeatPush int
+	NumNoRepeatUp   int
+	NumNoRepeatDown int
 }

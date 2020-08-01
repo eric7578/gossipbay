@@ -20,57 +20,43 @@ type Thread struct {
 	Posts   []Post
 }
 
-type Trending struct {
-	threads []Thread
-	titles  map[string]*Thread
-}
+type Trending map[string]*Thread
 
-func NewTrending() *Trending {
-	return &Trending{
-		titles: make(map[string]*Thread),
-	}
-}
+func NewTrending(posts []Post) Trending {
+	threads := make(map[string]*Thread)
 
-func (tr *Trending) addPosts(posts ...Post) {
 	for _, post := range posts {
 		title := trimTitle(post.Title)
-		t, ok := tr.titles[title]
-		if ok {
+		if t, ok := threads[title]; ok {
 			t.NumPush += post.NumPush
 			t.NumUp += post.NumUp
 			t.NumDown += post.NumDown
 			t.Posts = append(t.Posts, post)
 		} else {
-			t = &Thread{
+			threads[title] = &Thread{
 				Title:   post.Title,
 				NumPush: post.NumPush,
 				NumUp:   post.NumUp,
 				NumDown: post.NumDown,
 				Posts:   []Post{post},
 			}
-			tr.threads = append(tr.threads, *t)
-			tr.titles[title] = t
 		}
 	}
+	return Trending(threads)
 }
 
-func (tr *Trending) Deviate(v float32) []Thread {
+func (tr Trending) Deviate(v float32) []Thread {
 	var (
 		numMaxPush float32
 		numMinPush float32
 	)
-	for i, t := range tr.threads {
+	for _, t := range tr {
 		npush := float32(t.NumPush)
-		if i == 0 {
+		if numMaxPush < npush {
 			numMaxPush = npush
+		}
+		if numMinPush > npush {
 			numMinPush = npush
-		} else {
-			if numMaxPush < npush {
-				numMaxPush = npush
-			}
-			if numMinPush > npush {
-				numMinPush = npush
-			}
 		}
 	}
 
@@ -79,9 +65,9 @@ func (tr *Trending) Deviate(v float32) []Thread {
 		offset  = numMaxPush - numMinPush
 		threads []Thread
 	)
-	for _, t := range tr.threads {
+	for _, t := range tr {
 		if float32(t.NumPush)/offset > top {
-			threads = append(threads, t)
+			threads = append(threads, *t)
 		}
 	}
 	return threads

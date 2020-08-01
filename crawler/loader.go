@@ -7,10 +7,14 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-type HttpLoader struct {
+type Loader interface {
+	Load(string) (*goquery.Document, error)
 }
 
-func (ldr *HttpLoader) Load(url string) (doc *goquery.Document, err error) {
+type httpLoader struct {
+}
+
+func (ldr *httpLoader) Load(url string) (doc *goquery.Document, err error) {
 	c := http.Client{}
 	req, err := http.NewRequest("GET", url, nil)
 	req.Header.Add("cookie", "over18=1")

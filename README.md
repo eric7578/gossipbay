@@ -1,3 +1,3 @@
 # gossipbay
 
-![Test](https://github.com/eric7578/gossipbay/workflows/Test/badge.svg)
+![Build](https://github.com/eric7578/gossipbay/workflows/Build/badge.svg)

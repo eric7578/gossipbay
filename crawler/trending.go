@@ -45,13 +45,13 @@ func NewTrending(posts []Post) Trending {
 	return Trending(threads)
 }
 
-func (tr Trending) Deviate(v float32) []Thread {
+func (tr Trending) Deviate(v float64) []Thread {
 	var (
-		numMaxPush float32
-		numMinPush float32
+		numMaxPush float64
+		numMinPush float64
 	)
 	for _, t := range tr {
-		npush := float32(t.NumPush)
+		npush := float64(t.NumPush)
 		if numMaxPush < npush {
 			numMaxPush = npush
 		}
@@ -66,7 +66,7 @@ func (tr Trending) Deviate(v float32) []Thread {
 		threads []Thread
 	)
 	for _, t := range tr {
-		if float32(t.NumPush)/offset > top {
+		if float64(t.NumPush)/offset > top {
 			threads = append(threads, *t)
 		}
 	}

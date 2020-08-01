@@ -1,6 +1,7 @@
 package crawler
 
 import (
+	"net/url"
 	"path"
 	"regexp"
 	"strconv"
@@ -50,9 +51,6 @@ func (p *pageParser) ParsePostList(page string, from time.Time, to time.Time) ([
 				cont = false
 				return
 			} else if createAt.Before(to) {
-				if !regProtocol.MatchString(href) {
-					href = path.Join(p.domain, href)
-				}
 				infos = append(infos, PostInfo{
 					URL:      p.getFullURL(href),
 					CreateAt: createAt,
@@ -123,11 +121,17 @@ func isPushDown(i int, sel *goquery.Selection) bool {
 	return strings.TrimSpace(sel.Find(".push-tag").Text()) == "噓"
 }
 
-func (p *pageParser) getFullURL(path string) string {
-	if regProtocol.MatchString(path) {
-		return path
+func (p *pageParser) getFullURL(s string) string {
+	if regProtocol.MatchString(s) {
+		return s
 	}
-	return p.domain + path
+
+	u, err := url.Parse(p.domain)
+	if err != nil {
+		panic(err)
+	}
+	u.Path = path.Join(u.Path, s)
+	return u.String()
 }
 
 func parseURL(href string) (id string, createAt time.Time) {

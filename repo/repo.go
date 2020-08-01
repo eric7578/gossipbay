@@ -1,18 +1,14 @@
 package repo
 
-const (
-	// period labels
-	TrendingWeekly = "trending-weekly"
-	TrendingDaily  = "trending-daily"
-)
+import "github.com/eric7578/gossipbay/crawler"
 
 type Issue struct {
 	ID     int
 	Title  string
-	Labels map[string]struct{}
+	Labels []string
 }
 
 type Repository interface {
 	ListIssues(...string) []Issue
-	CreateIssueComment(issueID int, content string)
+	CreateTrendingReport(issueID int, threads []crawler.Thread)
 }

@@ -6,12 +6,6 @@ import (
 	"time"
 )
 
-type CollectOption struct {
-	Board string
-	From  time.Time
-	To    time.Time
-}
-
 type Crawler struct {
 	parser Parser
 }
@@ -20,20 +14,20 @@ func NewCrawler() *Crawler {
 	return &Crawler{
 		parser: &pageParser{
 			ldr:    &httpLoader{},
-			domain: "https://ptt.cc/bbs",
+			domain: "https://www.ptt.cc",
 		},
 	}
 }
 
-func (c *Crawler) Collect(opt CollectOption) []Post {
+func (c *Crawler) Collect(board string, from, to time.Time) []Post {
 	var (
 		posts []Post
-		page  = fmt.Sprintf("/bbs/%s/index.html", opt.Board)
+		page  = fmt.Sprintf("/bbs/%s/index.html", board)
 		postc = make(chan Post)
 		wg    sync.WaitGroup
 	)
 	for {
-		infos, next, more := c.parser.ParsePostList(page, opt.From, opt.To)
+		infos, next, more := c.parser.ParsePostList(page, from, to)
 		wg.Add(len(infos))
 		for _, info := range infos {
 			go func(info PostInfo) {

@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+
+	"github.com/eric7578/gossipbay/crawler"
 )
 
 type Github struct {
@@ -38,9 +40,9 @@ func (gh *Github) ListIssues(labels ...string) []Issue {
 	issues := make([]Issue, 0)
 	for _, githubIssue := range githubIssues {
 		if len(githubIssue.PullRequest) == 0 {
-			labels := make(map[string]struct{})
+			var labels []string
 			for _, label := range githubIssue.Labels {
-				labels[label.Name] = struct{}{}
+				labels = append(labels, label.Name)
 			}
 			issues = append(issues, Issue{
 				ID:     githubIssue.Number,
@@ -52,12 +54,17 @@ func (gh *Github) ListIssues(labels ...string) []Issue {
 	return issues
 }
 
-func (gh *Github) CreateIssueComment(issueID int, content string) {
-	type CreateIssueCommentBody struct {
+func (gh *Github) CreateTrendingReport(issueID int, threads []crawler.Thread) {
+	type CreateTrendingReportBody struct {
 		Body string `json:"body"`
 	}
-	payload := CreateIssueCommentBody{
-		Body: content,
+
+	var buf bytes.Buffer
+	if err := mdTmpl.Execute(&buf, threads); err != nil {
+		panic(err)
+	}
+	payload := CreateTrendingReportBody{
+		Body: buf.String(),
 	}
 
 	err := gh.api("POST", fmt.Sprintf("/repos/%s/%s/issues/%d/comments", gh.owner, gh.repo, issueID), nil, &payload)

@@ -3,7 +3,6 @@ on:
   push:
     branches:
       - dev
-
 jobs:
   compile:
     name: Run tests and compile
@@ -21,7 +20,5 @@ jobs:
       - run: go build -o bin/ghgb cmd/ghgb/main.go
       - uses: actions/upload-artifact@v2
         with:
-          name: ghgb artifact
+          name: ghgb
           path: bin/ghgb
-
-

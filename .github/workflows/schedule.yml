@@ -1,0 +1,14 @@
+name: Schedule
+on:
+  push:
+    branches:
+      - dev
+jobs:
+  schedule:
+    name: Run scheduled-jobs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v2
+        with:
+          name: ghgb
+      - run: ls -R

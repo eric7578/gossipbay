@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os"
+	"strings"
 
 	"github.com/eric7578/gossipbay/repo"
 	"github.com/eric7578/gossipbay/schedule"
@@ -15,41 +16,21 @@ func main() {
 		Usage: "ptt scheduled crawler",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Required: true,
-				Name:     "owner",
-				Aliases:  []string{"o"},
-				Usage:    "repository owner",
-				EnvVars:  []string{"GH_OWNER"},
-			},
-			&cli.StringFlag{
-				Required: true,
-				Name:     "repository",
-				Aliases:  []string{"r"},
-				Usage:    "repository name",
-				EnvVars:  []string{"GB_REPO"},
+				Name:    "github",
+				Aliases: []string{"gh"},
+				Usage:   "github repository",
+				EnvVars: []string{"GITHUB_REPOSITORY"},
 			},
 			&cli.StringFlag{
 				Required: true,
 				Name:     "token",
 				Aliases:  []string{"t"},
 				Usage:    "github api token",
-				EnvVars:  []string{"GH_TOKEN"},
-			},
-			&cli.BoolFlag{
-				Name:    "github",
-				Aliases: []string{"gh"},
-				Usage:   "use github",
 			},
 		},
 		Action: func(c *cli.Context) error {
-			owner, repository, token := c.String("owner"), c.String("repository"), c.String("token")
-
-			var r repo.Repository
-			switch {
-			case c.Bool("github"):
-				r = repo.NewGithub(owner, repository, token)
-			}
-
+			segs := strings.Split(c.String("github"), "/")
+			r := repo.NewGithub(segs[0], segs[1], c.String("token"))
 			return schedule.RunSchedule("trending-daily", r)
 		},
 	}

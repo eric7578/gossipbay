@@ -27,11 +27,17 @@ func main() {
 				Aliases:  []string{"t"},
 				Usage:    "github api token",
 			},
+			&cli.StringFlag{
+				Required: true,
+				Name:     "schedule",
+				Aliases:  []string{"s"},
+				Usage:    "schedule type",
+			},
 		},
 		Action: func(c *cli.Context) error {
 			segs := strings.Split(c.String("github"), "/")
 			r := repo.NewGithub(segs[0], segs[1], c.String("token"))
-			return schedule.RunSchedule("trending-daily", r)
+			return schedule.RunSchedule(c.String("schedule"), r)
 		},
 	}
 

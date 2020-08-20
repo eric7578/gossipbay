@@ -55,7 +55,7 @@ func (tr Trending) Deviate(v float64) []Thread {
 		if numMaxPush < npush {
 			numMaxPush = npush
 		}
-		if numMinPush > npush {
+		if numMinPush > npush || (numMinPush == 0 && npush > 0) {
 			numMinPush = npush
 		}
 	}

@@ -18,4 +18,4 @@ jobs:
       - name: Compile
         run: go build -v -o ./bin/gba ./cli/main.go
       - name: Run Schedule jobs
-        run: ./bin/gba -s trending-daily -t ${{ secrets.GBA_TOKEN }}
+        run: ./bin/gba run -s daily -t ${{ secrets.GBA_TOKEN }}

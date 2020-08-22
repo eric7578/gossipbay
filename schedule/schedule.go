@@ -8,7 +8,7 @@ import (
 	"github.com/eric7578/gossipbay/repo"
 )
 
-func RunSchedule(envTrending string, r repo.Repository) (err error) {
+func RunSchedule(schedule string, r repo.Repository) (err error) {
 	defer func() {
 		if e := recover(); e != nil {
 			err = fmt.Errorf("schedule failed %s", e)
@@ -16,7 +16,7 @@ func RunSchedule(envTrending string, r repo.Repository) (err error) {
 	}()
 
 	var wg sync.WaitGroup
-	issues := r.ListIssues(envTrending)
+	issues := r.ListIssues(schedule)
 	wg.Add(len(issues))
 	for _, issue := range issues {
 		go func(issue repo.Issue) {

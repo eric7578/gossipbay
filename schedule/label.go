@@ -7,7 +7,10 @@ import (
 	"time"
 )
 
-var taipei *time.Location
+var (
+	taipei         *time.Location
+	scheduleLabels []string = []string{"weekly", "daily"}
+)
 
 func init() {
 	var err error
@@ -15,6 +18,29 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func isScheduleLabel(l string) bool {
+	for _, label := range scheduleLabels {
+		if label == l {
+			return true
+		}
+	}
+	return false
+}
+
+func isTrendingLabel(l string) (float64, bool) {
+	if strings.Index(l, "trending-") != 0 {
+		return 0.0, false
+	}
+
+	segs := strings.Split(l, "-")
+	f, err := strconv.ParseFloat(segs[1], 64)
+	if err != nil {
+		panic(fmt.Errorf("invalid value for trending tag: %s", l))
+	}
+
+	return f, true
 }
 
 type scheduleOption struct {
@@ -25,18 +51,11 @@ type scheduleOption struct {
 
 func newScheduleOption(labels []string) scheduleOption {
 	opt := scheduleOption{}
-
 	for _, label := range labels {
-		segs := strings.Split(label, "-")
-		switch segs[0] {
-		case "deviate":
-			f, err := strconv.ParseFloat(segs[1], 64)
-			if err != nil {
-				panic(fmt.Errorf("invalid value for deviate tag: %s", label))
-			}
+		if isScheduleLabel(label) {
+			opt.from, opt.to = getTimeRanges(label)
+		} else if f, ok := isTrendingLabel(label); ok {
 			opt.deviate = f
-		case "trending":
-			opt.from, opt.to = getTimeRanges(segs[1])
 		}
 	}
 	return opt

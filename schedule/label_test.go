@@ -7,7 +7,7 @@ import (
 )
 
 func Test_newScheduleOption(t *testing.T) {
-	labels := []string{"deviate-0.8"}
+	labels := []string{"trending-0.8"}
 	opt := newScheduleOption(labels)
 
 	assert.Equal(t, 0.8, opt.deviate)

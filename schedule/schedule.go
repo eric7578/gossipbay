@@ -8,7 +8,7 @@ import (
 	"github.com/eric7578/gossipbay/repo"
 )
 
-func RunSchedule(schedule string, r repo.Repository) (err error) {
+func Run(schedule string, r repo.Repository) (err error) {
 	defer func() {
 		if e := recover(); e != nil {
 			err = fmt.Errorf("schedule failed %s", e)
@@ -22,14 +22,14 @@ func RunSchedule(schedule string, r repo.Repository) (err error) {
 		go func(issue repo.Issue) {
 			defer wg.Done()
 			c := crawler.NewCrawler()
-			opt := newScheduleOption(issue.Labels)
+			from, to, deviate := parseIssueLabels(issue.Labels)
 
-			posts := c.Collect(issue.Title, opt.from, opt.to)
+			posts := c.Collect(issue.Title, from, to)
 			tr := crawler.NewTrending(posts)
 
 			switch {
-			case opt.deviate > 0:
-				r.CreateTrendingReport(issue.ID, tr.Deviate(opt.deviate))
+			case deviate > 0:
+				r.CreateTrendingReport(issue.ID, tr.Deviate(deviate))
 			}
 		}(issue)
 	}

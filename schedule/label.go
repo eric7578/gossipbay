@@ -8,17 +8,8 @@ import (
 )
 
 var (
-	taipei         *time.Location
 	scheduleLabels []string = []string{"weekly", "daily"}
 )
-
-func init() {
-	var err error
-	taipei, err = time.LoadLocation("Asia/Taipei")
-	if err != nil {
-		panic(err)
-	}
-}
 
 func isScheduleLabel(l string) bool {
 	for _, label := range scheduleLabels {
@@ -43,34 +34,18 @@ func isTrendingLabel(l string) (float64, bool) {
 	return f, true
 }
 
-type scheduleOption struct {
-	deviate float64
-	from    time.Time
-	to      time.Time
-}
-
-func newScheduleOption(labels []string) scheduleOption {
-	opt := scheduleOption{}
+func parseIssueLabels(labels []string) (time.Time, time.Time, float64) {
+	var (
+		from    time.Time
+		to      time.Time
+		deviate float64
+	)
 	for _, label := range labels {
 		if isScheduleLabel(label) {
-			opt.from, opt.to = getTimeRanges(label)
+			from, to = getTimeRanges(label)
 		} else if f, ok := isTrendingLabel(label); ok {
-			opt.deviate = f
+			deviate = f
 		}
 	}
-	return opt
-}
-
-func getTimeRanges(trending string) (time.Time, time.Time) {
-	now := time.Now()
-	to := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, taipei)
-
-	switch trending {
-	case "weekly":
-		return to.Add(-7 * 24 * time.Hour), to
-	case "daily":
-		return to.Add(-24 * time.Hour), to
-	default:
-		panic(fmt.Errorf("invalid period %s", trending))
-	}
+	return from, to, deviate
 }

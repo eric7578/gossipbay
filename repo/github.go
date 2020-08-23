@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/eric7578/gossipbay/crawler"
 )
@@ -16,11 +17,12 @@ type Github struct {
 	owner string
 }
 
-func NewGithub(owner, repo, token string) *Github {
+func NewGithub(repository, token string) *Github {
+	segs := strings.Split(repository, "/")
 	return &Github{
 		token: token,
-		owner: owner,
-		repo:  repo,
+		owner: segs[0],
+		repo:  segs[1],
 	}
 }
 

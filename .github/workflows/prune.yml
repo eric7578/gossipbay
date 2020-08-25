@@ -17,6 +17,6 @@ jobs:
         with:
           go-version: ${{ matrix.go-version }}
       - name: Compile
-        run: go build -o ./bin/gba ./cli/*.go
+        run: go build -o ./bin/gba ./cli/gba.go
       - name: Run Prune jobs
         run: ./bin/gba prune -t ${{ secrets.GBA_TOKEN }} --range :-7

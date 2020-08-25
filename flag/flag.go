@@ -1,8 +1,8 @@
-package main
+package flag
 
 import "github.com/urfave/cli/v2"
 
-func repositoryFlag(required bool) *cli.StringFlag {
+func NewRepositoryFlag(required bool) *cli.StringFlag {
 	return &cli.StringFlag{
 		Required: required,
 		Name:     "repository",
@@ -12,7 +12,7 @@ func repositoryFlag(required bool) *cli.StringFlag {
 	}
 }
 
-func tokenFlag(required bool) *cli.StringFlag {
+func NewTokenFlag(required bool) *cli.StringFlag {
 	return &cli.StringFlag{
 		Required: required,
 		Name:     "token",
@@ -21,7 +21,7 @@ func tokenFlag(required bool) *cli.StringFlag {
 	}
 }
 
-func labelFlag(required bool) *cli.StringSliceFlag {
+func NewLabelFlag(required bool) *cli.StringSliceFlag {
 	return &cli.StringSliceFlag{
 		Required: required,
 		Name:     "label",

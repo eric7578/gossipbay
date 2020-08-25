@@ -7,7 +7,7 @@ import (
 	"github.com/eric7578/gossipbay/repo"
 )
 
-func Prune(r repo.Repository, user string, from time.Time, to time.Time, labels ...string) (err error) {
+func Prune(r repo.Repository, user string, from time.Time, to time.Time) (err error) {
 	defer func() {
 		if e := recover(); e != nil {
 			err = fmt.Errorf("prune failed %s", e)

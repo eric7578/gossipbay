@@ -17,6 +17,6 @@ jobs:
         with:
           go-version: ${{ matrix.go-version }}
       - name: Compile
-        run: go build -o ./bin/gba ./cli/*.go
+        run: go build -o ./bin/gba ./cli/gba.go
       - name: Run Schedule jobs
         run: ./bin/gba run -l daily -t ${{ secrets.GBA_TOKEN }}

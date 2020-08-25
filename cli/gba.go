@@ -4,10 +4,10 @@ import (
 	"log"
 	"os"
 
-	"github.com/eric7578/gossipbay/cli/flag"
+	"github.com/eric7578/gossipbay/flag"
 	"github.com/eric7578/gossipbay/repo"
 	"github.com/eric7578/gossipbay/schedule"
-	"github.com/urfave/cli/v2"
+	cli "github.com/urfave/cli/v2"
 )
 
 func main() {
@@ -19,9 +19,9 @@ func main() {
 				Name:  "run",
 				Usage: "Run schedule jobs",
 				Flags: []cli.Flag{
-					repositoryFlag(true),
-					tokenFlag(true),
-					labelFlag(true),
+					flag.NewRepositoryFlag(true),
+					flag.NewTokenFlag(true),
+					flag.NewLabelFlag(true),
 				},
 				Action: func(c *cli.Context) error {
 					r := repo.NewGithub(c.String("repository"), c.String("token"))
@@ -32,9 +32,8 @@ func main() {
 				Name:  "prune",
 				Usage: "Remove obsoleted comments",
 				Flags: []cli.Flag{
-					repositoryFlag(true),
-					tokenFlag(true),
-					labelFlag(false),
+					flag.NewRepositoryFlag(true),
+					flag.NewTokenFlag(true),
 					&cli.StringFlag{
 						Name:        "range",
 						Usage:       "Comments created `DAYS` days ago",
@@ -51,7 +50,7 @@ func main() {
 				Action: func(c *cli.Context) error {
 					r := repo.NewGithub(c.String("repository"), c.String("token"))
 					from, to := flag.ParseDaysExpression(c.String("range"))
-					return schedule.Prune(r, c.String("user"), from, to, c.StringSlice("label")...)
+					return schedule.Prune(r, c.String("user"), from, to)
 				},
 			},
 		},

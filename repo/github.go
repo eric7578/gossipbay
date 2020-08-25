@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/eric7578/gossipbay/crawler"
 )
@@ -70,6 +71,46 @@ func (gh *Github) CreateTrendingReport(issueID int, threads []crawler.Thread) {
 	}
 
 	err := gh.api("POST", fmt.Sprintf("/repos/%s/%s/issues/%d/comments", gh.owner, gh.repo, issueID), nil, &payload)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func (gh *Github) ListComments(since time.Time) []Comment {
+	type GithubComment struct {
+		Id   int
+		User struct {
+			Login string
+		}
+		CreatedAt time.Time `json:"created_at"`
+		UpdatedAt time.Time `json:"updated_at"`
+	}
+
+	var query string
+	if !since.IsZero() {
+		query = fmt.Sprintf("?since=%s", since.Format(time.RFC3339))
+	}
+	payload := make([]GithubComment, 0)
+	err := gh.api("GET", fmt.Sprintf("/repos/%s/%s/issues/comments%s", gh.owner, gh.repo, query), &payload, nil)
+	if err != nil {
+		panic(err)
+	}
+
+	comments := make([]Comment, len(payload))
+	for i, c := range payload {
+		comments[i] = Comment{
+			ID:        c.Id,
+			Author:    c.User.Login,
+			CreatedAt: c.CreatedAt,
+			UpdatedAt: c.UpdatedAt,
+		}
+	}
+
+	return comments
+}
+
+func (gh *Github) RemoveComment(commentID int) {
+	err := gh.api("DELETE", fmt.Sprintf("/repos/%s/%s/issues/comments/%d", gh.owner, gh.repo, commentID), nil, nil)
 	if err != nil {
 		panic(err)
 	}

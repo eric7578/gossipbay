@@ -30,9 +30,3 @@ func getTimeRanges(trending string) (time.Time, time.Time) {
 		panic(fmt.Errorf("invalid period %s", trending))
 	}
 }
-
-func offsetDays(d int64) time.Time {
-	now := time.Now()
-	t := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, taipei)
-	return t.Add(time.Duration(d*24) * time.Hour)
-}

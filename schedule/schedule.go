@@ -8,7 +8,7 @@ import (
 	"github.com/eric7578/gossipbay/repo"
 )
 
-func Run(schedule string, r repo.Repository) (err error) {
+func Run(r repo.Repository, schedule string) (err error) {
 	defer func() {
 		if e := recover(); e != nil {
 			err = fmt.Errorf("schedule failed %s", e)

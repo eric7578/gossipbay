@@ -1,4 +1,4 @@
-package flag
+package flagutil
 
 import (
 	"fmt"
@@ -10,6 +10,14 @@ import (
 var (
 	taipei *time.Location
 )
+
+func init() {
+	var err error
+	taipei, err = time.LoadLocation("Asia/Taipei")
+	if err != nil {
+		panic(err)
+	}
+}
 
 func init() {
 	var err error
@@ -38,6 +46,20 @@ func ParseDaysExpression(s string) (from, to time.Time) {
 		return startOfToday, to
 	}
 	return from, to
+}
+
+func ParseSchedule(schedule string) (time.Time, time.Time) {
+	now := time.Now()
+	to := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, taipei)
+
+	switch schedule {
+	case "weekly":
+		return to.Add(-7 * 24 * time.Hour), to
+	case "daily":
+		return to.Add(-24 * time.Hour), to
+	default:
+		panic(fmt.Errorf("invalid schedule %s", schedule))
+	}
 }
 
 func offsetDays(s string) time.Time {

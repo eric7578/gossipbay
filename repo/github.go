@@ -35,7 +35,12 @@ func (gh *Github) ListIssues(labels ...string) []Issue {
 		PullRequest json.RawMessage `json:"pull_request,omitempty"`
 	}
 	githubIssues := make([]GithubIssue, 0)
-	err := gh.api("GET", fmt.Sprintf("/repos/%s/%s/issues", gh.owner, gh.repo), &githubIssues, nil)
+
+	var query string
+	if len(labels) > 0 {
+		query = "?labels=" + strings.Join(labels, ",s")
+	}
+	err := gh.api("GET", fmt.Sprintf("/repos/%s/%s/issues%s", gh.owner, gh.repo, query), &githubIssues, nil)
 	if err != nil {
 		panic(err)
 	}

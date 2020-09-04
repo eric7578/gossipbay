@@ -12,11 +12,17 @@ jobs:
         platform: [ubuntu-latest]
     runs-on: ${{ matrix.platform }}
     steps:
+      - name: Set env
+        run: echo ::set-env name=GBA_SNAPSHOT_ID::$(date +%s)
       - uses: actions/checkout@v2
       - uses: actions/setup-go@v2
         with:
           go-version: ${{ matrix.go-version }}
       - name: Compile
-        run: go build -o ./bin/gba ./cli/gba.go
+        run: go build -o ./bin/gba ./cmd/gba/main.go
       - name: Run Schedule jobs
-        run: ./bin/gba run -l daily -t ${{ secrets.GBA_TOKEN }}
+        run: ./bin/gba run-issues -l daily > ${{ env.GBA_SNAPSHOT_ID }}.json
+      - uses: actions/upload-artifact@v2
+        with:
+          name: ${{ env.GBA_SNAPSHOT_ID }}.json
+          path: ${{ env.GBA_SNAPSHOT_ID }}.json

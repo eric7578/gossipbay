@@ -2,7 +2,7 @@ FROM golang:alpine as builder
 WORKDIR /src
 COPY . .
 ENV ZONEINFO /opt/zoneinfo.zip
-RUN go build -v -o ./bin/gba ./cli/*.go
+RUN go build -v -o ./bin/gba ./cmd/gba/main.go
 
 FROM alpine
 COPY --from=builder /src/bin/gba /gba

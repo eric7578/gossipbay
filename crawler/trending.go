@@ -26,6 +26,7 @@ func NewTrending(posts []Post) Trending {
 	threads := make(map[string]*Thread)
 
 	for _, post := range posts {
+		// Limitation: in PTT there might be some posts with same titles
 		title := trimTitle(post.Title)
 		if t, ok := threads[title]; ok {
 			t.NumPush += post.NumPush
@@ -34,7 +35,7 @@ func NewTrending(posts []Post) Trending {
 			t.Posts = append(t.Posts, post)
 		} else {
 			threads[title] = &Thread{
-				Title:   post.Title,
+				Title:   title,
 				NumPush: post.NumPush,
 				NumUp:   post.NumUp,
 				NumDown: post.NumDown,

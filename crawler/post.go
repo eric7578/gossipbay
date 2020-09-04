@@ -13,7 +13,8 @@ type Post struct {
 	ID              string
 	URL             string
 	CreateAt        time.Time
-	Title           string
+	Title           string `json:"-"`
+	Re              bool
 	Author          string
 	NumPush         int
 	NumUp           int
@@ -32,6 +33,7 @@ func (p *PageCrawler) VisitPost(page string) (post Post, err error) {
 	id, createAt := parseURL(page)
 	pushes := doc.Find(".push")
 	metaTags := doc.Find(".article-meta-tag")
+	title := metaTags.FilterFunction(isTitleMetaTag).Next().Text()
 	noRepeatPush := set{}
 	noRepeatUp := set{}
 	noRepeatDown := set{}
@@ -40,7 +42,8 @@ func (p *PageCrawler) VisitPost(page string) (post Post, err error) {
 		ID:       id,
 		URL:      page,
 		CreateAt: createAt,
-		Title:    metaTags.FilterFunction(isTitleMetaTag).Next().Text(),
+		Title:    title,
+		Re:       strings.Index(title, "Re:") == 0,
 		Author:   metaTags.FilterFunction(isAuthorMetaTag).Next().Text(),
 	}
 

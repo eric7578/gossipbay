@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/eric7578/gossipbay/testutil"
-	"github.com/issue9/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestPageCrawlerVisitPost(t *testing.T) {
@@ -22,6 +22,7 @@ func TestPageCrawlerVisitPost(t *testing.T) {
 	assert.Equal(t, 14, post.NumNoRepeatPush)
 	assert.Equal(t, 10, post.NumNoRepeatUp)
 	assert.Equal(t, 3, post.NumNoRepeatDown)
+	assert.False(t, post.Re)
 }
 
 func Test_parseURL(t *testing.T) {

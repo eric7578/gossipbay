@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/eric7578/gossipbay/testutil"
-	"github.com/issue9/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestPageCrawlerVisitBoard(t *testing.T) {

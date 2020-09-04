@@ -48,18 +48,21 @@ func ParseDaysExpression(s string) (from, to time.Time) {
 	return from, to
 }
 
-func ParseSchedule(schedule string) (time.Time, time.Time) {
-	now := time.Now()
-	to := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, taipei)
+func ParseSchedule(schedule string) (from, to time.Time, err error) {
+	to = time.Now()
 
 	switch schedule {
 	case "weekly":
-		return to.Add(-7 * 24 * time.Hour), to
+		from = to.Add(-7 * 24 * time.Hour)
 	case "daily":
-		return to.Add(-24 * time.Hour), to
-	default:
-		panic(fmt.Errorf("invalid schedule %s", schedule))
+		from = to.Add(-24 * time.Hour)
 	}
+
+	if from.IsZero() || to.IsZero() {
+		err = fmt.Errorf("invalid schedule %s", schedule)
+	}
+
+	return from, to, err
 }
 
 func offsetDays(s string) time.Time {

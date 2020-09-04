@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os"
+	"time"
 
 	"github.com/eric7578/gossipbay/flagutil"
 	"github.com/eric7578/gossipbay/repo"
@@ -17,42 +18,87 @@ func main() {
 		Commands: []*cli.Command{
 			{
 				Name:  "run",
-				Usage: "Run schedule jobs",
+				Usage: "Run a single board job",
 				Flags: []cli.Flag{
-					newRepositoryFlag(true),
-					newTokenFlag(true),
-					newLabelFlag(true),
+					&cli.StringFlag{
+						Name:     "board",
+						Aliases:  []string{"b"},
+						Usage:    "Name of the target board",
+						Required: true,
+					},
+					&cli.StringFlag{
+						Name:     "schedule",
+						Aliases:  []string{"s"},
+						Usage:    "Job scuedule",
+						Required: true,
+					},
+					&cli.Float64Flag{
+						Name:        "deviate",
+						Aliases:     []string{"d"},
+						Usage:       "Deviate for calculate trending",
+						DefaultText: "0.9",
+					},
+					&cli.Int64Flag{
+						Name:    "timeout",
+						Aliases: []string{"t"},
+						Usage:   "Timeout for crawling",
+					},
 				},
-				Action: func(c *cli.Context) error {
-					r := repo.NewGithub(c.String("repository"), c.String("token"))
-					s := c.StringSlice("label")[0]
-					from, to := flagutil.ParseSchedule(s)
-					return schedule.Run(r, s, from, to)
+				Action: func(c *cli.Context) (err error) {
+					from, to, err := flagutil.ParseSchedule(c.String("schedule"))
+					if err != nil {
+						return err
+					}
+
+					s := schedule.NewScheduler()
+					threads, err := s.Run(schedule.RunOption{
+						Board:   c.String("board"),
+						From:    from,
+						To:      to,
+						Timeout: time.Second * time.Duration(c.Int64("timeout")),
+						Deviate: c.Float64("deviate"),
+					})
+					if err != nil {
+						return err
+					}
+
+					return schedule.Pipe(threads, os.Stdout)
 				},
 			},
 			{
-				Name:  "prune",
-				Usage: "Remove obsoleted comments",
+				Name:  "run-issues",
+				Usage: "Run schedule jobs",
 				Flags: []cli.Flag{
-					newRepositoryFlag(true),
-					newTokenFlag(true),
 					&cli.StringFlag{
-						Name:        "range",
-						Usage:       "Comments created `DAYS` days ago",
-						Required:    true,
-						DefaultText: ":",
+						Required: true,
+						Name:     "repository",
+						Aliases:  []string{"r"},
+						Usage:    "Repository OWNER/REPO",
+						EnvVars:  []string{"GITHUB_REPOSITORY"},
 					},
 					&cli.StringFlag{
-						Name:     "user",
-						Usage:    "`USER` who create the comment",
-						EnvVars:  []string{"GITHUB_ACTOR"},
+						Name:    "token",
+						Aliases: []string{"t"},
+						Usage:   "Github api token",
+					},
+					&cli.StringSliceFlag{
 						Required: true,
+						Name:     "label",
+						Aliases:  []string{"l"},
+						Usage:    "Issue flags",
 					},
 				},
 				Action: func(c *cli.Context) error {
 					r := repo.NewGithub(c.String("repository"), c.String("token"))
-					from, to := flagutil.ParseDaysExpression(c.String("range"))
-					return schedule.Prune(r, c.String("user"), from, to)
+					s := schedule.NewScheduler()
+					report, err := s.RunIssues(r, schedule.RunIssueOptions{
+						Labels: c.StringSlice("label"),
+					})
+					if err != nil {
+						return err
+					}
+
+					return schedule.Pipe(report, os.Stdout)
 				},
 			},
 		},
@@ -60,33 +106,5 @@ func main() {
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
-	}
-}
-
-func newRepositoryFlag(required bool) *cli.StringFlag {
-	return &cli.StringFlag{
-		Required: required,
-		Name:     "repository",
-		Aliases:  []string{"r"},
-		Usage:    "Repository OWNER/REPO",
-		EnvVars:  []string{"GITHUB_REPOSITORY"},
-	}
-}
-
-func newTokenFlag(required bool) *cli.StringFlag {
-	return &cli.StringFlag{
-		Required: required,
-		Name:     "token",
-		Aliases:  []string{"t"},
-		Usage:    "Github api token",
-	}
-}
-
-func newLabelFlag(required bool) *cli.StringSliceFlag {
-	return &cli.StringSliceFlag{
-		Required: required,
-		Name:     "label",
-		Aliases:  []string{"l"},
-		Usage:    "Issue flags",
 	}
 }

@@ -38,7 +38,7 @@ func (gh *Github) ListIssues(labels ...string) []Issue {
 
 	var query string
 	if len(labels) > 0 {
-		query = "?labels=" + strings.Join(labels, ",s")
+		query = "?labels=" + strings.Join(labels, ",")
 	}
 	err := gh.api("GET", fmt.Sprintf("/repos/%s/%s/issues%s", gh.owner, gh.repo, query), &githubIssues, nil)
 	if err != nil {

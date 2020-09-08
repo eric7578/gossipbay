@@ -21,7 +21,7 @@ type RunIssueOptions struct {
 	Labels []string
 }
 
-func (s *Scheduler) RunIssues(r repo.Repository, opt RunIssueOptions) (IssueReports, error) {
+func (s *Scheduler) RunIssues(r *repo.Github, opt RunIssueOptions) (IssueReports, error) {
 	issues := r.ListIssues(opt.Labels...)
 	breportc := make(chan IssueBoardReport)
 

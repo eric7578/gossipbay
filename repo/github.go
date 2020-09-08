@@ -6,24 +6,28 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
+	"sync"
 	"time"
-
-	"github.com/eric7578/gossipbay/crawler"
 )
 
+type Issue struct {
+	ID     int
+	Title  string
+	Labels []string
+}
+
 type Github struct {
-	token string
-	repo  string
-	owner string
+	apiPath string
+	token   string
 }
 
 func NewGithub(repository, token string) *Github {
 	segs := strings.Split(repository, "/")
 	return &Github{
-		token: token,
-		owner: segs[0],
-		repo:  segs[1],
+		apiPath: fmt.Sprintf("/repos/%s/%s", segs[0], segs[1]),
+		token:   token,
 	}
 }
 
@@ -40,7 +44,7 @@ func (gh *Github) ListIssues(labels ...string) []Issue {
 	if len(labels) > 0 {
 		query = "?labels=" + strings.Join(labels, ",")
 	}
-	err := gh.api("GET", fmt.Sprintf("/repos/%s/%s/issues%s", gh.owner, gh.repo, query), &githubIssues, nil)
+	err := gh.api("GET", gh.apiPath+"/issues"+query, &githubIssues, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -62,63 +66,45 @@ func (gh *Github) ListIssues(labels ...string) []Issue {
 	return issues
 }
 
-func (gh *Github) CreateTrendingReport(issueID int, threads []crawler.Thread) {
-	type CreateTrendingReportBody struct {
-		Body string `json:"body"`
-	}
-
-	var buf bytes.Buffer
-	if err := mdTmpl.Execute(&buf, threads); err != nil {
-		panic(err)
-	}
-	payload := CreateTrendingReportBody{
-		Body: buf.String(),
-	}
-
-	err := gh.api("POST", fmt.Sprintf("/repos/%s/%s/issues/%d/comments", gh.owner, gh.repo, issueID), nil, &payload)
-	if err != nil {
-		panic(err)
-	}
-}
-
-func (gh *Github) ListComments(since time.Time) []Comment {
-	type GithubComment struct {
-		Id   int
-		User struct {
-			Login string
-		}
-		CreatedAt time.Time `json:"created_at"`
-		UpdatedAt time.Time `json:"updated_at"`
-	}
-
-	var query string
-	if !since.IsZero() {
-		query = fmt.Sprintf("?since=%s", since.Format(time.RFC3339))
-	}
-	payload := make([]GithubComment, 0)
-	err := gh.api("GET", fmt.Sprintf("/repos/%s/%s/issues/comments%s", gh.owner, gh.repo, query), &payload, nil)
-	if err != nil {
-		panic(err)
-	}
-
-	comments := make([]Comment, len(payload))
-	for i, c := range payload {
-		comments[i] = Comment{
-			ID:        c.Id,
-			Author:    c.User.Login,
-			CreatedAt: c.CreatedAt,
-			UpdatedAt: c.UpdatedAt,
+func (gh *Github) PruneArtifact(daysAgo int) error {
+	type GithubArtifacts struct {
+		Artifacts []struct {
+			ID        int `json:"id"`
+			Expired   bool
+			CreatedAt time.Time `json:"created_at"`
 		}
 	}
 
-	return comments
-}
-
-func (gh *Github) RemoveComment(commentID int) {
-	err := gh.api("DELETE", fmt.Sprintf("/repos/%s/%s/issues/comments/%d", gh.owner, gh.repo, commentID), nil, nil)
-	if err != nil {
-		panic(err)
+	var artifacts GithubArtifacts
+	if err := gh.api("GET", gh.apiPath+"/actions/artifacts", &artifacts, nil); err != nil {
+		return err
 	}
+
+	var wg sync.WaitGroup
+	errc := make(chan error)
+	deadline := time.Now().Add(time.Duration(-24*daysAgo) * time.Hour)
+	for _, artifact := range artifacts.Artifacts {
+		if !artifact.Expired && artifact.CreatedAt.Before(deadline) {
+			wg.Add(1)
+			go func(artifactId int) {
+				defer wg.Done()
+				errc <- gh.api("DELETE", gh.apiPath+"/actions/artifacts/"+strconv.Itoa(artifactId), nil, nil)
+			}(artifact.ID)
+		}
+	}
+
+	go func() {
+		wg.Wait()
+		close(errc)
+	}()
+
+	for err := range errc {
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (gh *Github) api(method string, path string, response interface{}, body interface{}) error {

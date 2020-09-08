@@ -20,9 +20,11 @@ jobs:
           go-version: ${{ matrix.go-version }}
       - name: Compile
         run: go build -o ./bin/gba ./cmd/gba/main.go
-      - name: Run Schedule jobs
-        run: ./bin/gba run-issues -l daily > ${{ env.GBA_SNAPSHOT_ID }}.json
+      - name: Run schedule jobs
+        run: ./bin/gba repo run -l daily > ${{ env.GBA_SNAPSHOT_ID }}.json
       - uses: actions/upload-artifact@v2
         with:
           name: ${{ env.GBA_SNAPSHOT_ID }}.json
           path: ${{ env.GBA_SNAPSHOT_ID }}.json
+      - name: Run prune jobs
+        run: ./bin/gba repo prune --days-ago 3 -t ${{ secrets.GBA_TOKEN }}

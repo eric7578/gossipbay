@@ -66,39 +66,72 @@ func main() {
 				},
 			},
 			{
-				Name:  "run-issues",
-				Usage: "Run schedule jobs",
-				Flags: []cli.Flag{
-					&cli.StringFlag{
-						Required: true,
-						Name:     "repository",
-						Aliases:  []string{"r"},
-						Usage:    "Repository OWNER/REPO",
-						EnvVars:  []string{"GITHUB_REPOSITORY"},
-					},
-					&cli.StringFlag{
-						Name:    "token",
-						Aliases: []string{"t"},
-						Usage:   "Github api token",
-					},
-					&cli.StringSliceFlag{
-						Required: true,
-						Name:     "label",
-						Aliases:  []string{"l"},
-						Usage:    "Issue flags",
-					},
-				},
-				Action: func(c *cli.Context) error {
-					r := repo.NewGithub(c.String("repository"), c.String("token"))
-					s := schedule.NewScheduler()
-					report, err := s.RunIssues(r, schedule.RunIssueOptions{
-						Labels: c.StringSlice("label"),
-					})
-					if err != nil {
-						return err
-					}
+				Name:  "repo",
+				Usage: "Run crawler based on repoistory settings",
+				Subcommands: []*cli.Command{
+					{
+						Name:  "run",
+						Usage: "Run schedule jobs",
+						Flags: []cli.Flag{
+							&cli.StringFlag{
+								Required: true,
+								Name:     "repository",
+								Aliases:  []string{"r"},
+								Usage:    "Repository OWNER/REPO",
+								EnvVars:  []string{"GITHUB_REPOSITORY"},
+							},
+							&cli.StringFlag{
+								Name:    "token",
+								Aliases: []string{"t"},
+								Usage:   "Github api token",
+							},
+							&cli.StringSliceFlag{
+								Required: true,
+								Name:     "label",
+								Aliases:  []string{"l"},
+								Usage:    "Issue flags",
+							},
+						},
+						Action: func(c *cli.Context) error {
+							r := repo.NewGithub(c.String("repository"), c.String("token"))
+							s := schedule.NewScheduler()
+							report, err := s.RunIssues(r, schedule.RunIssueOptions{
+								Labels: c.StringSlice("label"),
+							})
+							if err != nil {
+								return err
+							}
 
-					return schedule.Pipe(report, os.Stdout)
+							return schedule.Pipe(report, os.Stdout)
+						},
+					},
+					{
+						Name: "prune",
+						Flags: []cli.Flag{
+							&cli.StringFlag{
+								Required: true,
+								Name:     "repository",
+								Aliases:  []string{"r"},
+								Usage:    "Repository OWNER/REPO",
+								EnvVars:  []string{"GITHUB_REPOSITORY"},
+							},
+							&cli.StringFlag{
+								// Required: true,
+								Name:    "token",
+								Aliases: []string{"t"},
+								Usage:   "Github api token",
+							},
+							&cli.IntFlag{
+								Required: true,
+								Name:     "days-ago",
+								Usage:    "Prune artifact `DAYS` days ago",
+							},
+						},
+						Action: func(c *cli.Context) error {
+							r := repo.NewGithub(c.String("repository"), c.String("token"))
+							return r.PruneArtifact(c.Int("days-ago"))
+						},
+					},
 				},
 			},
 		},

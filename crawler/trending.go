@@ -13,11 +13,11 @@ func trimTitle(title string) string {
 }
 
 type Thread struct {
-	Title   string
-	NumPush int
-	NumUp   int
-	NumDown int
-	Posts   []Post
+	Title   string `json:"title"`
+	NumPush int    `json:"numPush"`
+	NumUp   int    `json:"numUp"`
+	NumDown int    `json:"numDown"`
+	Posts   []Post `json:"posts"`
 }
 
 type Trending map[string]*Thread

@@ -7,11 +7,11 @@ import (
 )
 
 type RunOption struct {
-	Board   string
-	From    time.Time
-	To      time.Time
-	Timeout time.Duration
-	Deviate float64
+	Board   string        `json:"board"`
+	From    time.Time     `json:"from"`
+	To      time.Time     `json:"to"`
+	Timeout time.Duration `json:"-"`
+	Deviate float64       `json:"-"`
 }
 
 func (opt RunOption) isValid() bool {
@@ -20,8 +20,8 @@ func (opt RunOption) isValid() bool {
 
 type BoardReport struct {
 	RunOption
-	Total   int
-	Threads []crawler.Thread
+	Total   int              `json:"total"`
+	Threads []crawler.Thread `json:"threads"`
 }
 
 type Scheduler struct {

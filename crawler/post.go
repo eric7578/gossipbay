@@ -10,18 +10,20 @@ import (
 )
 
 type Post struct {
-	ID              string
-	URL             string
-	CreateAt        time.Time
-	Title           string `json:"-"`
-	Re              bool
-	Author          string
-	NumPush         int
-	NumUp           int
-	NumDown         int
-	NumNoRepeatPush int
-	NumNoRepeatUp   int
-	NumNoRepeatDown int
+	ID              string    `json:"id"`
+	URL             string    `json:"url"`
+	CreatedAt       time.Time `json:"createdAt"`
+	Title           string    `json:"title"`
+	Re              bool      `json:"reply"`
+	Author          string    `json:"author"`
+	NumPush         int       `json:"numPush"`
+	NumUp           int       `json:"numUp"`
+	NumDown         int       `json:"numDown"`
+	TextContent     string    `json:"textContent"`
+	ExternalLinks   []string  `json:"exteralLinks"`
+	NumNoRepeatPush int       `json:"-"`
+	NumNoRepeatUp   int       `json:"-"`
+	NumNoRepeatDown int       `json:"-"`
 }
 
 func (p *PageCrawler) VisitPost(page string) (post Post, err error) {
@@ -39,12 +41,12 @@ func (p *PageCrawler) VisitPost(page string) (post Post, err error) {
 	noRepeatDown := set{}
 
 	post = Post{
-		ID:       id,
-		URL:      page,
-		CreateAt: createAt,
-		Title:    title,
-		Re:       strings.Index(title, "Re:") == 0,
-		Author:   metaTags.FilterFunction(isAuthorMetaTag).Next().Text(),
+		ID:        id,
+		URL:       page,
+		CreatedAt: createAt,
+		Title:     title,
+		Re:        strings.Index(title, "Re:") == 0,
+		Author:    metaTags.FilterFunction(isAuthorMetaTag).Next().Text(),
 	}
 
 	pushes.Each(func(i int, sel *goquery.Selection) {

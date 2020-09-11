@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/eric7578/gossipbay/crawler"
 	"github.com/eric7578/gossipbay/flagutil"
 	"github.com/eric7578/gossipbay/repo"
 	"github.com/eric7578/gossipbay/schedule"
@@ -16,6 +17,19 @@ func main() {
 		Name:  "gba",
 		Usage: "ptt scheduled crawler",
 		Commands: []*cli.Command{
+			{
+				Name: "visit",
+				Action: func(c *cli.Context) error {
+					pageURL := c.Args().First()
+					cr := crawler.NewPageCrawler()
+					post, err := cr.VisitPost(pageURL)
+					if err != nil {
+						return err
+					}
+
+					return schedule.Pipe(post, os.Stdout)
+				},
+			},
 			{
 				Name:  "run",
 				Usage: "Run a single board job",

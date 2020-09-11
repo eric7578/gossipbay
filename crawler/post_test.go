@@ -15,14 +15,13 @@ func TestPageCrawlerVisitPost(t *testing.T) {
 	post, _ := p.VisitPost("testdata/M.1593841729.A.BDA.html")
 
 	assert.Equal(t, "[閒聊] 聊聊大王", post.Title)
-	assert.Equal(t, "sky419012 (fly)", post.Author)
-	assert.Equal(t, 36, post.NumPush)
-	assert.Equal(t, 14, post.NumUp)
-	assert.Equal(t, 5, post.NumDown)
-	assert.Equal(t, 14, post.NumNoRepeatPush)
-	assert.Equal(t, 10, post.NumNoRepeatUp)
-	assert.Equal(t, 3, post.NumNoRepeatDown)
 	assert.False(t, post.Re)
+	assert.Equal(t, "sky419012 (fly)", post.Author)
+	assert.Equal(t, 36, post.PushTotal)
+	assert.Equal(t, 22, post.BattlePush)
+	assert.Equal(t, 14, post.PushUp)
+	assert.Equal(t, 5, post.PushDown)
+	assert.Equal(t, 14, post.UniquePush)
 }
 
 func Test_parseURL(t *testing.T) {

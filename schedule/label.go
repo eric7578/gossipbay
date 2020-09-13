@@ -10,8 +10,8 @@ import (
 	"github.com/eric7578/gossipbay/repo"
 )
 
-func parseRunOption(issue repo.Issue) RunOption {
-	opt := RunOption{
+func parseTrendingOption(issue repo.Issue) TrendingOption {
+	opt := TrendingOption{
 		Board: issue.Title,
 	}
 	for _, label := range issue.Labels {

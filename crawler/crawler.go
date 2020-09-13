@@ -3,6 +3,8 @@ package crawler
 import (
 	"fmt"
 	"net/http"
+	"net/url"
+	"path"
 	"regexp"
 	"time"
 
@@ -13,12 +15,25 @@ var (
 	regProtocol = regexp.MustCompile("https?://")
 )
 
+func getFullURL(s string) string {
+	if regProtocol.MatchString(s) {
+		return s
+	}
+
+	u, err := url.Parse("https://www.ptt.cc")
+	if err != nil {
+		panic(err)
+	}
+	u.Path = path.Join(u.Path, s)
+	return u.String()
+}
+
 type Loader interface {
 	Load(string) (*goquery.Document, error)
 }
 
 type Crawler interface {
-	VisitBoard(page string, from time.Time, to time.Time) ([]PostInfo, string, bool)
+	VisitBoard(page string, from time.Time, to time.Time) ([]Post, string, bool)
 	VisitPost(page string) Post
 }
 
@@ -44,12 +59,10 @@ func (ldr *httpLoader) Load(url string) (doc *goquery.Document, err error) {
 
 type PageCrawler struct {
 	Loader
-	domain string
 }
 
 func NewPageCrawler() *PageCrawler {
 	return &PageCrawler{
 		Loader: &httpLoader{},
-		domain: "https://www.ptt.cc",
 	}
 }

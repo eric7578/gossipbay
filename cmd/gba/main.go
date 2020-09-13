@@ -18,7 +18,8 @@ func main() {
 		Usage: "ptt scheduled crawler",
 		Commands: []*cli.Command{
 			{
-				Name: "visit",
+				Name:  "visit-post",
+				Usage: "Run crawler on an single page by url",
 				Action: func(c *cli.Context) error {
 					pageURL := c.Args().First()
 					cr := crawler.NewPageCrawler()
@@ -31,7 +32,7 @@ func main() {
 				},
 			},
 			{
-				Name:  "run",
+				Name:  "trending",
 				Usage: "Run a single board job",
 				Flags: []cli.Flag{
 					&cli.StringFlag{
@@ -47,10 +48,10 @@ func main() {
 						Required: true,
 					},
 					&cli.Float64Flag{
-						Name:        "deviate",
-						Aliases:     []string{"d"},
-						Usage:       "Deviate for calculate trending",
-						DefaultText: "0.9",
+						Name:     "deviate",
+						Aliases:  []string{"d"},
+						Usage:    "Deviate for calculate trending",
+						Required: true,
 					},
 					&cli.Int64Flag{
 						Name:    "timeout",
@@ -64,14 +65,15 @@ func main() {
 						return err
 					}
 
-					s := schedule.NewScheduler()
-					threads, err := s.Run(schedule.RunOption{
+					opt := schedule.TrendingOption{
 						Board:   c.String("board"),
 						From:    from,
 						To:      to,
 						Timeout: time.Second * time.Duration(c.Int64("timeout")),
 						Deviate: c.Float64("deviate"),
-					})
+					}
+					s := schedule.NewScheduler()
+					threads, err := s.Trending(opt)
 					if err != nil {
 						return err
 					}

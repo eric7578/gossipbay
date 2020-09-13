@@ -1,25 +1,24 @@
 package crawler
 
 import (
-	"net/url"
-	"path"
+	"context"
+	"fmt"
+	"sync"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
 )
 
-type PostInfo struct {
-	URL      string
-	CreateAt time.Time
-	IsReply  bool
+type ScanResult struct {
+	Post Post
+	Err  error
 }
 
-func (p *PageCrawler) VisitBoard(page string, from time.Time, to time.Time) (infos []PostInfo, nextPage string, err error) {
-	var doc *goquery.Document
-
-	doc, err = p.Load(p.getFullURL(page))
+func (p *PageCrawler) loadBoardPage(page string, from time.Time, to time.Time) ([]string, string, error) {
+	doc, err := p.Load(getFullURL(page))
+	posts := make([]string, 0)
 	if err != nil {
-		return infos, "", err
+		return nil, "", err
 	}
 
 	next := true
@@ -35,36 +34,55 @@ func (p *PageCrawler) VisitBoard(page string, from time.Time, to time.Time) (inf
 				return
 			}
 
-			_, createAt := parseURL(href)
-			if createAt.Before(from) {
+			_, createdAt := parseURL(href)
+			if createdAt.Before(from) {
 				next = false
 				return
-			} else if createAt.Before(to) {
-				infos = append(infos, PostInfo{
-					URL:      p.getFullURL(href),
-					CreateAt: createAt,
-				})
+			} else if createdAt.Before(to) {
+				posts = append(posts, getFullURL(href))
 			}
 		})
 
 	if next {
 		nextHref := doc.Find(".btn-group-paging .btn").Eq(1).AttrOr("href", "")
-		nextPage = p.getFullURL(nextHref)
-		return infos, nextPage, nil
+		return posts, getFullURL(nextHref), nil
 	}
 
-	return infos, "", nil
+	return posts, "", nil
 }
 
-func (p *PageCrawler) getFullURL(s string) string {
-	if regProtocol.MatchString(s) {
-		return s
-	}
+func (c *PageCrawler) ScanBoard(ctx context.Context, board string, from, to time.Time) <-chan ScanResult {
+	boardPage := fmt.Sprintf("/bbs/%s/index.html", board)
+	resultc := make(chan ScanResult)
+	var wg sync.WaitGroup
 
-	u, err := url.Parse(p.domain)
-	if err != nil {
-		panic(err)
-	}
-	u.Path = path.Join(u.Path, s)
-	return u.String()
+	go func() {
+		for boardPage != "" {
+			select {
+			case <-ctx.Done():
+				goto END
+
+			default:
+				var pages []string
+				pages, boardPage, _ = c.loadBoardPage(boardPage, from, to)
+				for _, page := range pages {
+					wg.Add(1)
+					go func(page string) {
+						defer wg.Done()
+						p, err := c.VisitPost(page)
+						resultc <- ScanResult{
+							Post: p,
+							Err:  err,
+						}
+					}(page)
+				}
+			}
+		}
+
+	END:
+		wg.Wait()
+		close(resultc)
+	}()
+
+	return resultc
 }

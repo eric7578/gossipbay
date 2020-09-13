@@ -13,7 +13,7 @@ func Test_parseRunOption(t *testing.T) {
 		Title:  "Gossiping",
 		Labels: []string{"trending-0.9", "timeout-2"},
 	}
-	opt := parseRunOption(issue)
+	opt := parseTrendingOption(issue)
 
 	assert.Equal(t, "Gossiping", opt.Board)
 	assert.Equal(t, 0.9, opt.Deviate)
@@ -25,7 +25,7 @@ func Test_parseRunOption_withoutTimeout(t *testing.T) {
 	issue := repo.Issue{
 		Labels: []string{},
 	}
-	opt := parseRunOption(issue)
+	opt := parseTrendingOption(issue)
 
 	assert.True(t, opt.Timeout == 0)
 }

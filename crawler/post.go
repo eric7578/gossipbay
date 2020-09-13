@@ -9,24 +9,20 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-func (p *PageCrawler) VisitPost(page string) (post Post, err error) {
+func (p *PageCrawler) VisitPost(page string) (Post, error) {
+	post := Post{}
 	doc, err := p.Load(page)
 	if err != nil {
 		return post, err
 	}
 
 	id, createdAt := parseURL(page)
-
-	post = Post{
-		ID:        id,
-		URL:       page,
-		CreatedAt: createdAt,
-	}
-
+	post.ID = id
+	post.URL = page
+	post.CreatedAt = createdAt
 	post.parseMeta(doc.Find(".article-meta-tag"))
 	post.parsePush(doc.Find(".push"))
 	post.parseContent(doc.Find("#main-content"))
-
 	return post, nil
 }
 

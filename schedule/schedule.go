@@ -1,28 +1,12 @@
 package schedule
 
 import (
-	"time"
+	"encoding/json"
+	"io"
 
 	"github.com/eric7578/gossipbay/crawler"
+	"github.com/pkg/errors"
 )
-
-type RunOption struct {
-	Board   string        `json:"board"`
-	From    time.Time     `json:"from"`
-	To      time.Time     `json:"to"`
-	Timeout time.Duration `json:"-"`
-	Deviate float64       `json:"-"`
-}
-
-func (opt RunOption) isValid() bool {
-	return opt.Board != "" && !opt.From.IsZero()
-}
-
-type BoardReport struct {
-	RunOption
-	Total   int              `json:"total"`
-	Threads []crawler.Thread `json:"threads"`
-}
 
 type Scheduler struct {
 	crawler *crawler.PageCrawler
@@ -33,4 +17,13 @@ func NewScheduler() *Scheduler {
 		crawler: crawler.NewPageCrawler(),
 	}
 	return &s
+}
+
+func Pipe(src interface{}, dest io.Writer) error {
+	if bytes, err := json.Marshal(src); err != nil {
+		return errors.Wrap(err, "cannot format as json")
+	} else if _, err := dest.Write(bytes); err != nil {
+		return errors.Wrap(err, "output failed")
+	}
+	return nil
 }

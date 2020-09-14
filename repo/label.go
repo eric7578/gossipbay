@@ -1,4 +1,4 @@
-package schedule
+package repo
 
 import (
 	"fmt"
@@ -7,19 +7,19 @@ import (
 	"time"
 
 	"github.com/eric7578/gossipbay/flagutil"
-	"github.com/eric7578/gossipbay/repo"
+	"github.com/eric7578/gossipbay/schedule"
 )
 
-func parseTrendingOption(issue repo.Issue) TrendingOption {
-	opt := TrendingOption{
+func parseTrendingOption(issue GithubIssue) schedule.TrendingOption {
+	opt := schedule.TrendingOption{
 		Board: issue.Title,
 	}
 	for _, label := range issue.Labels {
-		if f, ok := isDeviateLabel(label); ok {
+		if f, ok := isDeviateLabel(label.Name); ok {
 			opt.Deviate = f
-		} else if d, ok := isTimeoutLabel(label); ok {
+		} else if d, ok := isTimeoutLabel(label.Name); ok {
 			opt.Timeout = d
-		} else if from, to, err := flagutil.ParseSchedule(label); err == nil {
+		} else if from, to, err := flagutil.ParseSchedule(label.Name); err == nil {
 			opt.From = from
 			opt.To = to
 		}

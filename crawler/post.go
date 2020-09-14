@@ -1,6 +1,7 @@
 package crawler
 
 import (
+	"encoding/json"
 	"path"
 	"strconv"
 	"strings"
@@ -39,6 +40,25 @@ type Post struct {
 	UniquePush  int       `json:"uniquePush"`
 	PushUp      int       `json:"pushUp"`
 	PushDown    int       `json:"pushDown"`
+}
+
+func (p *Post) MarshalJSON() ([]byte, error) {
+	type Alias Post
+	return json.Marshal(&struct {
+		*Alias
+		TextContent string `json:"textContent"`
+	}{
+		Alias:       (*Alias)(p),
+		TextContent: lineClamp(p.TextContent, 100),
+	})
+}
+
+func lineClamp(s string, size int) string {
+	chars := []rune(s)
+	if len(chars) < size {
+		return s
+	}
+	return strings.TrimSpace(string(chars[:size])) + "..."
 }
 
 func parseURL(href string) (id string, createAt time.Time) {

@@ -10,12 +10,13 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/eric7578/gossipbay/schedule"
 )
 
-type Issue struct {
-	ID     int
+type GithubIssue struct {
 	Title  string
-	Labels []string
+	Labels []struct{ Name string }
 }
 
 type Github struct {
@@ -31,39 +32,26 @@ func NewGithub(repository, token string) *Github {
 	}
 }
 
-func (gh *Github) ListIssues(labels ...string) []Issue {
-	type GithubIssue struct {
-		Number      int
-		Title       string
-		Labels      []struct{ Name string }
-		PullRequest json.RawMessage `json:"pull_request,omitempty"`
-	}
-	githubIssues := make([]GithubIssue, 0)
+func (gh *Github) GetTrendingOptions(labels ...string) []schedule.TrendingOption {
+	issues := make([]GithubIssue, 0)
 
 	var query string
 	if len(labels) > 0 {
 		query = "?labels=" + strings.Join(labels, ",")
 	}
-	err := gh.api("GET", gh.apiPath+"/issues"+query, &githubIssues, nil)
+	err := gh.api("GET", gh.apiPath+"/issues"+query, &issues, nil)
 	if err != nil {
 		panic(err)
 	}
 
-	issues := make([]Issue, 0)
-	for _, githubIssue := range githubIssues {
-		if len(githubIssue.PullRequest) == 0 {
-			var labels []string
-			for _, label := range githubIssue.Labels {
-				labels = append(labels, label.Name)
-			}
-			issues = append(issues, Issue{
-				ID:     githubIssue.Number,
-				Title:  githubIssue.Title,
-				Labels: labels,
-			})
+	opts := make([]schedule.TrendingOption, 0)
+	for _, issue := range issues {
+		opt := parseTrendingOption(issue)
+		if opt.IsValid() {
+			opts = append(opts, opt)
 		}
 	}
-	return issues
+	return opts
 }
 
 func (gh *Github) PruneArtifact(daysAgo int) error {

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 	"time"
@@ -73,7 +74,7 @@ func main() {
 						Deviate: c.Float64("deviate"),
 					}
 					s := schedule.NewScheduler()
-					threads, err := s.Trending(opt)
+					threads, err := s.Trending(context.Background(), opt)
 					if err != nil {
 						return err
 					}
@@ -110,15 +111,15 @@ func main() {
 						},
 						Action: func(c *cli.Context) error {
 							r := repo.NewGithub(c.String("repository"), c.String("token"))
+							opts := r.GetTrendingOptions(c.StringSlice("label")...)
+
 							s := schedule.NewScheduler()
-							report, err := s.RunIssues(r, schedule.RunIssueOptions{
-								Labels: c.StringSlice("label"),
-							})
+							trendings, err := s.TrendingAll(opts...)
 							if err != nil {
 								return err
 							}
 
-							return schedule.Pipe(report, os.Stdout)
+							return schedule.Pipe(trendings, os.Stdout)
 						},
 					},
 					{

@@ -1,17 +1,19 @@
-package schedule
+package repo
 
 import (
 	"testing"
 	"time"
 
-	"github.com/eric7578/gossipbay/repo"
 	"github.com/stretchr/testify/assert"
 )
 
 func Test_parseRunOption(t *testing.T) {
-	issue := repo.Issue{
-		Title:  "Gossiping",
-		Labels: []string{"trending-0.9", "timeout-2"},
+	issue := GithubIssue{
+		Title: "Gossiping",
+		Labels: []struct{ Name string }{
+			{Name: "trending-0.9"},
+			{Name: "timeout-2"},
+		},
 	}
 	opt := parseTrendingOption(issue)
 
@@ -22,8 +24,8 @@ func Test_parseRunOption(t *testing.T) {
 }
 
 func Test_parseRunOption_withoutTimeout(t *testing.T) {
-	issue := repo.Issue{
-		Labels: []string{},
+	issue := GithubIssue{
+		Labels: []struct{ Name string }{},
 	}
 	opt := parseTrendingOption(issue)
 

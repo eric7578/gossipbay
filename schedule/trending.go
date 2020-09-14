@@ -6,21 +6,27 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/eric7578/gossipbay/crawler"
 )
 
 type TrendingOption struct {
-	Board   string
-	From    time.Time
-	To      time.Time
-	Timeout time.Duration
-	Deviate float64
+	Board   string        `json:"board"`
+	From    time.Time     `json:"from"`
+	To      time.Time     `json:"to"`
+	Timeout time.Duration `json:"timeout"`
+	Deviate float64       `json:"deviate"`
 }
 
-func (opt TrendingOption) isValid() bool {
+func (opt TrendingOption) IsValid() bool {
 	return opt.Board != "" && !opt.From.IsZero()
+}
+
+type Trending struct {
+	TrendingOption
+	Threads []Thread `json:"threads"`
 }
 
 type Thread struct {
@@ -64,7 +70,7 @@ func (t *trending) addPost(p crawler.Post) {
 	}
 }
 
-func (t *trending) deviate(threshold float64) []*Thread {
+func (t *trending) deviate(threshold float64) []Thread {
 	maxScore := float64(-1.0)
 	minScore := float64(-1.0)
 
@@ -77,13 +83,13 @@ func (t *trending) deviate(threshold float64) []*Thread {
 		}
 	}
 
-	threads := make([]*Thread, 0)
+	threads := make([]Thread, 0)
 	offset := maxScore - minScore
 	for _, thread := range t.threads {
 		thread.Deviate = thread.Score / offset
 		if threshold <= thread.Deviate {
 			thread.sortPosts()
-			threads = append(threads, thread)
+			threads = append(threads, *thread)
 		}
 	}
 	return threads
@@ -97,25 +103,60 @@ func genGroup(s string) string {
 	return fmt.Sprintf("%x", h.Sum(nil))
 }
 
-func (s *Scheduler) Trending(opt TrendingOption) ([]*Thread, error) {
+func (s *Scheduler) Trending(ctx context.Context, opt TrendingOption) (Trending, error) {
 	var (
-		ctx    context.Context
-		cancel context.CancelFunc
+		cancel   context.CancelFunc
+		trending = Trending{
+			TrendingOption: opt,
+		}
 	)
 	if opt.Timeout > 0 {
-		ctx, cancel = context.WithTimeout(context.Background(), opt.Timeout)
+		ctx, cancel = context.WithTimeout(ctx, opt.Timeout)
 	} else {
-		ctx, cancel = context.WithCancel(context.Background())
+		ctx, cancel = context.WithCancel(ctx)
 	}
 	defer cancel()
 
 	t := newTrending(ScoreByBattle)
 	for result := range s.crawler.ScanBoard(ctx, opt.Board, opt.From, opt.To) {
 		if result.Err != nil {
-			return nil, result.Err
+			return trending, result.Err
 		} else {
 			t.addPost(result.Post)
 		}
 	}
-	return t.deviate(opt.Deviate), nil
+
+	trending.Threads = t.deviate(opt.Deviate)
+	return trending, nil
+}
+
+func (s *Scheduler) TrendingAll(opts ...TrendingOption) ([]Trending, error) {
+	trendings := make([]Trending, 0)
+	trendingc := make(chan Trending)
+	done := make(chan struct{})
+	ctx := context.Background()
+
+	go func() {
+		for t := range trendingc {
+			trendings = append(trendings, t)
+		}
+		done <- struct{}{}
+	}()
+
+	var wg sync.WaitGroup
+	wg.Add(len(opts))
+	for _, opt := range opts {
+		go func(opt TrendingOption) {
+			defer wg.Done()
+			t, err := s.Trending(ctx, opt)
+			if err != nil {
+				return
+			}
+			trendingc <- t
+		}(opt)
+	}
+	wg.Wait()
+	close(trendingc)
+	<-done
+	return trendings, nil
 }

@@ -29,6 +29,12 @@ type Trending struct {
 	Threads []Thread `json:"threads"`
 }
 
+type Fad struct {
+	StartAt   time.Time  `json:"startAt"`
+	EndAt     time.Time  `json:"endAt"`
+	Trendings []Trending `json:"trendings"`
+}
+
 type Thread struct {
 	Score   float64        `json:"score"`
 	Deviate float64        `json:"deviate"`
@@ -130,15 +136,18 @@ func (s *Scheduler) Trending(ctx context.Context, opt TrendingOption) (Trending,
 	return trending, nil
 }
 
-func (s *Scheduler) TrendingAll(opts ...TrendingOption) ([]Trending, error) {
-	trendings := make([]Trending, 0)
+func (s *Scheduler) TrendingAll(opts ...TrendingOption) (Fad, error) {
+	fad := Fad{
+		StartAt:   time.Now(),
+		Trendings: make([]Trending, 0),
+	}
 	trendingc := make(chan Trending)
 	done := make(chan struct{})
 	ctx := context.Background()
 
 	go func() {
 		for t := range trendingc {
-			trendings = append(trendings, t)
+			fad.Trendings = append(fad.Trendings, t)
 		}
 		done <- struct{}{}
 	}()
@@ -158,5 +167,6 @@ func (s *Scheduler) TrendingAll(opts ...TrendingOption) ([]Trending, error) {
 	wg.Wait()
 	close(trendingc)
 	<-done
-	return trendings, nil
+	fad.EndAt = time.Now()
+	return fad, nil
 }

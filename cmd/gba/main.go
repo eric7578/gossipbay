@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"encoding/json"
+	"io"
 	"log"
 	"os"
 	"time"
@@ -9,7 +11,7 @@ import (
 	"github.com/eric7578/gossipbay/crawler"
 	"github.com/eric7578/gossipbay/flagutil"
 	"github.com/eric7578/gossipbay/repo"
-	"github.com/eric7578/gossipbay/schedule"
+	"github.com/pkg/errors"
 	cli "github.com/urfave/cli/v2"
 )
 
@@ -29,7 +31,7 @@ func main() {
 						return err
 					}
 
-					return schedule.Pipe(post, os.Stdout)
+					return pipe(post, os.Stdout)
 				},
 			},
 			{
@@ -66,20 +68,20 @@ func main() {
 						return err
 					}
 
-					opt := schedule.TrendingOption{
+					opt := crawler.TrendingOption{
 						Board:   c.String("board"),
 						From:    from,
 						To:      to,
 						Timeout: time.Second * time.Duration(c.Int64("timeout")),
 						Deviate: c.Float64("deviate"),
 					}
-					s := schedule.NewScheduler()
-					threads, err := s.Trending(context.Background(), opt)
+					cr := crawler.NewPageCrawler()
+					trendings, err := cr.Trending(context.Background(), opt)
 					if err != nil {
 						return err
 					}
 
-					return schedule.Pipe(threads, os.Stdout)
+					return pipe(trendings, os.Stdout)
 				},
 			},
 			{
@@ -113,13 +115,13 @@ func main() {
 							r := repo.NewGithub(c.String("repository"), c.String("token"))
 							opts := r.GetTrendingOptions(c.StringSlice("label")...)
 
-							s := schedule.NewScheduler()
-							trendings, err := s.TrendingAll(opts...)
+							cr := crawler.NewPageCrawler()
+							trendings, err := cr.Trending(context.Background(), opts...)
 							if err != nil {
 								return err
 							}
 
-							return schedule.Pipe(trendings, os.Stdout)
+							return pipe(trendings, os.Stdout)
 						},
 					},
 					{
@@ -157,4 +159,13 @@ func main() {
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func pipe(src interface{}, dest io.Writer) error {
+	if bytes, err := json.Marshal(src); err != nil {
+		return errors.Wrap(err, "cannot format as json")
+	} else if _, err := dest.Write(bytes); err != nil {
+		return errors.Wrap(err, "output failed")
+	}
+	return nil
 }

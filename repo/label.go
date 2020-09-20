@@ -6,12 +6,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/eric7578/gossipbay/crawler"
 	"github.com/eric7578/gossipbay/flagutil"
-	"github.com/eric7578/gossipbay/schedule"
 )
 
-func parseTrendingOption(issue GithubIssue) schedule.TrendingOption {
-	opt := schedule.TrendingOption{
+func parseTrendingOption(issue GithubIssue) crawler.TrendingOption {
+	opt := crawler.TrendingOption{
 		Board: issue.Title,
 	}
 	for _, label := range issue.Labels {

@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/eric7578/gossipbay/schedule"
+	"github.com/eric7578/gossipbay/crawler"
 )
 
 type GithubIssue struct {
@@ -32,7 +32,7 @@ func NewGithub(repository, token string) *Github {
 	}
 }
 
-func (gh *Github) GetTrendingOptions(labels ...string) []schedule.TrendingOption {
+func (gh *Github) GetTrendingOptions(labels ...string) []crawler.TrendingOption {
 	issues := make([]GithubIssue, 0)
 
 	var query string
@@ -44,7 +44,7 @@ func (gh *Github) GetTrendingOptions(labels ...string) []schedule.TrendingOption
 		panic(err)
 	}
 
-	opts := make([]schedule.TrendingOption, 0)
+	opts := make([]crawler.TrendingOption, 0)
 	for _, issue := range issues {
 		opt := parseTrendingOption(issue)
 		if opt.IsValid() {

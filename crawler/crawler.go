@@ -6,7 +6,6 @@ import (
 	"net/url"
 	"path"
 	"regexp"
-	"time"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -30,11 +29,6 @@ func getFullURL(s string) string {
 
 type Loader interface {
 	Load(string) (*goquery.Document, error)
-}
-
-type Crawler interface {
-	VisitBoard(page string, from time.Time, to time.Time) ([]Post, string, bool)
-	VisitPost(page string) Post
 }
 
 type httpLoader struct {

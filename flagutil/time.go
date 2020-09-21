@@ -49,7 +49,8 @@ func ParseDaysExpression(s string) (from, to time.Time) {
 }
 
 func ParseSchedule(schedule string) (from, to time.Time, err error) {
-	to = time.Now()
+	now := time.Now()
+	to = time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, taipei)
 
 	switch schedule {
 	case "weekly":

@@ -26,7 +26,9 @@ func main() {
 				Action: func(c *cli.Context) error {
 					pageURL := c.Args().First()
 					cr := crawler.NewPageCrawler()
-					post, err := cr.VisitPost(pageURL)
+					post, err := cr.VisitPost(crawler.VisitPostOption{
+						URL: pageURL,
+					})
 					if err != nil {
 						return err
 					}

@@ -69,7 +69,9 @@ func (c *PageCrawler) ScanBoard(ctx context.Context, board string, from, to time
 					wg.Add(1)
 					go func(page string) {
 						defer wg.Done()
-						p, err := c.VisitPost(page)
+						p, err := c.VisitPost(VisitPostOption{
+							URL: page,
+						})
 						resultc <- ScanResult{
 							Post: p,
 							Err:  err,

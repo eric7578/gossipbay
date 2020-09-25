@@ -12,7 +12,9 @@ func TestPageCrawlerVisitPost(t *testing.T) {
 	p := PageCrawler{
 		Loader: &testutil.TestDataLoader{},
 	}
-	post, _ := p.VisitPost("testdata/M.1593841729.A.BDA.html")
+	post, _ := p.VisitPost(VisitPostOption{
+		URL: "testdata/M.1593841729.A.BDA.html",
+	})
 
 	assert.Equal(t, "[閒聊] 聊聊大王", post.Title)
 	assert.False(t, post.Re)

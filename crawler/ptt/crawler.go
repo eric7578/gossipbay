@@ -1,4 +1,4 @@
-package crawler
+package ptt
 
 import (
 	"fmt"
@@ -51,12 +51,12 @@ func (ldr *httpLoader) Load(url string) (doc *goquery.Document, err error) {
 	return
 }
 
-type PageCrawler struct {
+type PTTCrawler struct {
 	Loader
 }
 
-func NewPageCrawler() *PageCrawler {
-	return &PageCrawler{
+func NewPTTCrawler() *PTTCrawler {
+	return &PTTCrawler{
 		Loader: &httpLoader{},
 	}
 }

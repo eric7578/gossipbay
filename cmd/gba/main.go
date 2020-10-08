@@ -8,7 +8,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/eric7578/gossipbay/crawler"
+	"github.com/eric7578/gossipbay/crawler/ptt"
 	"github.com/eric7578/gossipbay/flagutil"
 	"github.com/eric7578/gossipbay/repo"
 	"github.com/pkg/errors"
@@ -25,8 +25,8 @@ func main() {
 				Usage: "Run crawler on an single page by url",
 				Action: func(c *cli.Context) error {
 					pageURL := c.Args().First()
-					cr := crawler.NewPageCrawler()
-					post, err := cr.VisitPost(crawler.VisitPostOption{
+					cr := ptt.NewPTTCrawler()
+					post, err := cr.VisitPost(ptt.VisitPostOption{
 						URL: pageURL,
 					})
 					if err != nil {
@@ -70,14 +70,14 @@ func main() {
 						return err
 					}
 
-					opt := crawler.TrendingOption{
+					opt := ptt.TrendingOption{
 						Board:   c.String("board"),
 						From:    from,
 						To:      to,
 						Timeout: time.Second * time.Duration(c.Int64("timeout")),
 						Deviate: c.Float64("deviate"),
 					}
-					cr := crawler.NewPageCrawler()
+					cr := ptt.NewPTTCrawler()
 					trendings, err := cr.Trending(context.Background(), opt)
 					if err != nil {
 						return err
@@ -117,7 +117,7 @@ func main() {
 							r := repo.NewGithub(c.String("repository"), c.String("token"))
 							opts := r.GetTrendingOptions(c.StringSlice("label")...)
 
-							cr := crawler.NewPageCrawler()
+							cr := ptt.NewPTTCrawler()
 							trendings, err := cr.Trending(context.Background(), opts...)
 							if err != nil {
 								return err

@@ -1,4 +1,4 @@
-package crawler
+package ptt
 
 import (
 	"testing"

@@ -8,7 +8,6 @@ import (
 )
 
 type DaemonOption struct {
-	DaemonMode bool
 	PrivateKey string
 	PublicKey  string
 }
@@ -23,11 +22,11 @@ func NewDaemon(opt DaemonOption) *Daemon {
 	}
 }
 
-func (d *Daemon) ValidateToken(c *gin.Context) {
+func (d *Daemon) validateToken(c *gin.Context) {
 	auth := c.Request.Header.Get("Authorization")
 	if len(auth) == 0 || strings.Index(auth, "Bearer ") != 0 {
 		c.Abort()
-		c.String(http.StatusUnauthorized, "invalid token")
+		c.String(http.StatusUnauthorized, "token required")
 		return
 	}
 
@@ -39,4 +38,18 @@ func (d *Daemon) ValidateToken(c *gin.Context) {
 	}
 
 	c.Next()
+}
+
+func (d *Daemon) Run(port string) {
+	r := gin.Default()
+
+	api := r.Group("/api")
+	{
+		api.Use(d.validateToken)
+		api.GET("/ping", func(c *gin.Context) {
+			c.String(http.StatusOK, "pong")
+		})
+	}
+
+	r.Run(port)
 }

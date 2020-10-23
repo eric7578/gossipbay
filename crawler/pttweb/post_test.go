@@ -1,4 +1,4 @@
-package ptt
+package pttweb
 
 import (
 	"testing"
@@ -8,11 +8,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestPageCrawlerVisitPost(t *testing.T) {
-	p := PageCrawler{
+func TestPttWorkerVisitPost(t *testing.T) {
+	w := PttWorker{
 		Loader: &testutil.TestDataLoader{},
 	}
-	post, _ := p.VisitPost(VisitPostOption{
+	post, _ := w.VisitPost(VisitPostOption{
 		URL: "testdata/M.1593841729.A.BDA.html",
 	})
 

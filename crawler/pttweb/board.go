@@ -1,4 +1,4 @@
-package ptt
+package pttweb
 
 import (
 	"context"
@@ -9,13 +9,13 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-type ScanResult struct {
+type scanResult struct {
 	Post Post
 	Err  error
 }
 
-func (p *PageCrawler) loadBoardPage(page string, from time.Time, to time.Time) ([]string, string, error) {
-	doc, err := p.Load(getFullURL(page))
+func (w *PttWorker) loadBoardPage(page string, from time.Time, to time.Time) ([]string, string, error) {
+	doc, err := w.Load(getFullURL(page))
 	posts := make([]string, 0)
 	if err != nil {
 		return nil, "", err
@@ -51,9 +51,9 @@ func (p *PageCrawler) loadBoardPage(page string, from time.Time, to time.Time) (
 	return posts, "", nil
 }
 
-func (c *PageCrawler) ScanBoard(ctx context.Context, board string, from, to time.Time) <-chan ScanResult {
+func (w *PttWorker) scanBoard(ctx context.Context, board string, from, to time.Time) <-chan scanResult {
 	boardPage := fmt.Sprintf("/bbs/%s/index.html", board)
-	resultc := make(chan ScanResult)
+	resultc := make(chan scanResult)
 	var wg sync.WaitGroup
 
 	go func() {
@@ -64,15 +64,15 @@ func (c *PageCrawler) ScanBoard(ctx context.Context, board string, from, to time
 
 			default:
 				var pages []string
-				pages, boardPage, _ = c.loadBoardPage(boardPage, from, to)
+				pages, boardPage, _ = w.loadBoardPage(boardPage, from, to)
 				for _, page := range pages {
 					wg.Add(1)
 					go func(page string) {
 						defer wg.Done()
-						p, err := c.VisitPost(VisitPostOption{
+						p, err := w.VisitPost(VisitPostOption{
 							URL: page,
 						})
-						resultc <- ScanResult{
+						resultc <- scanResult{
 							Post: p,
 							Err:  err,
 						}

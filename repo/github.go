@@ -6,17 +6,14 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strconv"
 	"strings"
-	"sync"
-	"time"
-
-	"github.com/eric7578/gossipbay/crawler/ptt"
 )
 
 type GithubIssue struct {
 	Title  string
-	Labels []struct{ Name string }
+	Labels []struct {
+		Name string
+	}
 }
 
 type Github struct {
@@ -32,67 +29,14 @@ func NewGithub(repository, token string) *Github {
 	}
 }
 
-func (gh *Github) GetTrendingOptions(labels ...string) []ptt.TrendingOption {
-	issues := make([]GithubIssue, 0)
-
-	var query string
+func (gh *Github) GetIssues(labels ...string) ([]GithubIssue, error) {
+	issues := []GithubIssue{}
+	query := ""
 	if len(labels) > 0 {
 		query = "?labels=" + strings.Join(labels, ",")
 	}
 	err := gh.api("GET", gh.apiPath+"/issues"+query, &issues, nil)
-	if err != nil {
-		panic(err)
-	}
-
-	opts := make([]ptt.TrendingOption, 0)
-	for _, issue := range issues {
-		opt := parseTrendingOption(issue)
-		if opt.IsValid() {
-			opts = append(opts, opt)
-		}
-	}
-	return opts
-}
-
-func (gh *Github) PruneArtifact(daysAgo int) error {
-	type GithubArtifacts struct {
-		Artifacts []struct {
-			ID        int `json:"id"`
-			Expired   bool
-			CreatedAt time.Time `json:"created_at"`
-		}
-	}
-
-	var artifacts GithubArtifacts
-	if err := gh.api("GET", gh.apiPath+"/actions/artifacts", &artifacts, nil); err != nil {
-		return err
-	}
-
-	var wg sync.WaitGroup
-	errc := make(chan error)
-	deadline := time.Now().Add(time.Duration(-24*daysAgo) * time.Hour)
-	for _, artifact := range artifacts.Artifacts {
-		if !artifact.Expired && artifact.CreatedAt.Before(deadline) {
-			wg.Add(1)
-			go func(artifactId int) {
-				defer wg.Done()
-				errc <- gh.api("DELETE", gh.apiPath+"/actions/artifacts/"+strconv.Itoa(artifactId), nil, nil)
-			}(artifact.ID)
-		}
-	}
-
-	go func() {
-		wg.Wait()
-		close(errc)
-	}()
-
-	for err := range errc {
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return issues, err
 }
 
 func (gh *Github) api(method string, path string, response interface{}, body interface{}) error {

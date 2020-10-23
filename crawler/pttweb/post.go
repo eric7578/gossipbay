@@ -1,4 +1,4 @@
-package ptt
+package pttweb
 
 import (
 	"encoding/json"
@@ -14,7 +14,7 @@ type VisitPostOption struct {
 	URL string
 }
 
-func (p *PageCrawler) VisitPost(opt VisitPostOption) (Post, error) {
+func (p *PttWorker) VisitPost(opt VisitPostOption) (Post, error) {
 	post := Post{}
 	doc, err := p.Load(opt.URL)
 	if err != nil {

@@ -1,6 +1,7 @@
-package ptt
+package pttweb
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -51,12 +52,24 @@ func (ldr *httpLoader) Load(url string) (doc *goquery.Document, err error) {
 	return
 }
 
-type PTTCrawler struct {
+type PttWorker struct {
 	Loader
 }
 
-func NewPTTCrawler() *PTTCrawler {
-	return &PTTCrawler{
+func NewPttWorker() *PttWorker {
+	return &PttWorker{
 		Loader: &httpLoader{},
 	}
+}
+
+func (w *PttWorker) Accept(args map[string]string) bool {
+	return args["_type"] == "pttweb"
+}
+
+func (w *PttWorker) Run(args map[string]string) (interface{}, error) {
+	targs, err := parseArgs(args)
+	if err != nil {
+		return nil, err
+	}
+	return w.trending(context.Background(), targs)
 }

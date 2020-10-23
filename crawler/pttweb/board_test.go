@@ -1,4 +1,4 @@
-package ptt
+package pttweb
 
 import (
 	"testing"
@@ -8,10 +8,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestPageCrawler_visitBoard(t *testing.T) {
+func TestPttWorker_visitBoard(t *testing.T) {
 	now := time.Now()
 	loc, _ := time.LoadLocation("Asia/Taipei")
-	p := PageCrawler{
+	p := PttWorker{
 		Loader: &testutil.TestDataLoader{},
 	}
 	posts, next, _ := p.loadBoardPage("testdata/board.html", time.Date(2020, 7, 3, 0, 0, 0, 0, loc), now)

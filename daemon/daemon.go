@@ -49,6 +49,7 @@ func (d *Daemon) Run(port string) {
 		api.GET("/ping", func(c *gin.Context) {
 			c.String(http.StatusOK, "pong")
 		})
+		api.POST("/job", d.createJob)
 	}
 
 	r.Run(port)

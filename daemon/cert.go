@@ -23,16 +23,21 @@ func newCert(pub, priv string) *cert {
 	pubKey, err := jwt.ParseRSAPublicKeyFromPEM(pubBytes)
 	wrapFatal(err, "invalid public key")
 
-	privBytes, err := ioutil.ReadFile(priv)
-	fatal(err)
-
-	privKey, err := jwt.ParseRSAPrivateKeyFromPEM(privBytes)
-	wrapFatal(err, "invalid private key")
-
-	return &cert{
-		pub:  pubKey,
-		priv: privKey,
+	c := cert{
+		pub: pubKey,
 	}
+
+	if priv != "" {
+		privBytes, err := ioutil.ReadFile(priv)
+		fatal(err)
+
+		privKey, err := jwt.ParseRSAPrivateKeyFromPEM(privBytes)
+		wrapFatal(err, "invalid private key")
+
+		c.priv = privKey
+	}
+
+	return &c
 }
 
 func (c *cert) Sign() (string, error) {

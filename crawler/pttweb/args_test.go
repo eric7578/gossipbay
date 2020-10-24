@@ -11,7 +11,7 @@ func Test_parseArgs(t *testing.T) {
 	args, err := parseArgs(map[string]string{
 		"board":   "Gossiping",
 		"deviate": "0.9",
-		"period":  "daily",
+		"range":   "yesterday",
 		"timeout": "2",
 	})
 
@@ -26,7 +26,7 @@ func Test_parseArgs_withoutTimeout(t *testing.T) {
 	args, err := parseArgs(map[string]string{
 		"board":   "Gossiping",
 		"deviate": "0.9",
-		"period":  "daily",
+		"range":   "yesterday",
 	})
 
 	assert.Nil(t, err)

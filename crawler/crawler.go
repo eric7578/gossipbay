@@ -7,41 +7,32 @@ import (
 )
 
 type Worker interface {
-	Accept(args map[string]string) bool
 	Run(args map[string]string) (interface{}, error)
 }
 
 type Crawler struct {
-	workers []Worker
+	workers map[string]Worker
 	sem     chan struct{}
 }
 
 func NewCrawler() *Crawler {
 	return &Crawler{
-		workers: []Worker{
-			pttweb.NewPttWorker(),
+		workers: map[string]Worker{
+			"pttweb": pttweb.NewPttWorker(),
 		},
 		sem: make(chan struct{}, 10),
 	}
 }
 
-func (c *Crawler) CreateJob(args map[string]string) (interface{}, error) {
+func (c *Crawler) CreateJob(t string, args map[string]string) (interface{}, error) {
 	c.sem <- struct{}{}
 	defer func() {
 		<-c.sem
 	}()
 
-	var w Worker
-	for _, wr := range c.workers {
-		if wr.Accept(args) {
-			w = wr
-			break
-		}
-	}
-
-	if w == nil {
+	if w, ok := c.workers[t]; !ok {
 		return nil, errors.New("invalid crawler type")
+	} else {
+		return w.Run(args)
 	}
-
-	return w.Run(args)
 }

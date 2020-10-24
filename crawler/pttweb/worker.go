@@ -62,10 +62,6 @@ func NewPttWorker() *PttWorker {
 	}
 }
 
-func (w *PttWorker) Accept(args map[string]string) bool {
-	return args["_type"] == "pttweb"
-}
-
 func (w *PttWorker) Run(args map[string]string) (interface{}, error) {
 	targs, err := parseArgs(args)
 	if err != nil {

@@ -19,7 +19,7 @@ func parseArgs(args map[string]string) (trendingArgs, error) {
 	if d, ok := parseTimeoutArg(args["timeout"]); ok {
 		targs.timeout = d
 	}
-	if from, to, ok := parsePeriodArg(args["period"]); ok {
+	if from, to, ok := parseRangeArg(args["range"]); ok {
 		targs.from = from
 		targs.to = to
 	}
@@ -52,7 +52,7 @@ func parseDeviateArg(arg string) (float64, bool) {
 	return f, true
 }
 
-func parsePeriodArg(arg string) (time.Time, time.Time, bool) {
+func parseRangeArg(arg string) (time.Time, time.Time, bool) {
 	var (
 		now  = time.Now()
 		from time.Time
@@ -60,9 +60,9 @@ func parsePeriodArg(arg string) (time.Time, time.Time, bool) {
 	)
 
 	switch arg {
-	case "weekly":
+	case "last-week":
 		return to.Add(-7 * 24 * time.Hour), to, true
-	case "daily":
+	case "yesterday":
 		return to.Add(-24 * time.Hour), to, true
 	default:
 		return from, to, false

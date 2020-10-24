@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/eric7578/gossipbay/crawler"
 	"github.com/gin-gonic/gin"
 )
 
@@ -14,11 +15,13 @@ type DaemonOption struct {
 
 type Daemon struct {
 	*cert
+	crawler *crawler.Crawler
 }
 
 func NewDaemon(opt DaemonOption) *Daemon {
 	return &Daemon{
-		cert: newCert(opt.PublicKey, opt.PrivateKey),
+		cert:    newCert(opt.PublicKey, opt.PrivateKey),
+		crawler: crawler.NewCrawler(),
 	}
 }
 
@@ -49,7 +52,7 @@ func (d *Daemon) Run(port string) {
 		api.GET("/ping", func(c *gin.Context) {
 			c.String(http.StatusOK, "pong")
 		})
-		api.POST("/job", d.createJob)
+		api.POST("/jobs", d.createJob)
 	}
 
 	r.Run(port)
